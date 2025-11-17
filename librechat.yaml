@@ -1,0 +1,59 @@
+version: 1.2.6
+cache: true
+
+interface:
+  customWelcome: 'Welcome to LibreChat! Enjoy your experience.'
+  fileSearch: true
+  endpointsMenu: true
+  modelSelect: true
+  parameters: true
+  sidePanel: true
+  presets: true
+  prompts: true
+  bookmarks: true
+  multiConvo: true
+  agents: false
+
+registration:
+  socialLogins: ['github', 'google', 'discord', 'openid']
+
+endpoints:
+  custom:
+    # Ollama
+    - name: "Naya-AI"
+      apiKey: "ollama"
+      baseURL: "http://host.docker.internal:11434/v1"
+      models:
+        default: 
+          - "llama3.2:3b"
+          - "gpt-oss:20b"
+        fetch: false
+      titleConvo: true
+      titleModel: "llama3.2:3b"
+      summarize: false
+      summaryModel: "llama3.2:3b"
+      forcePrompt: false
+      modelDisplayLabel: "Ollama"
+      dropParams:
+        - "user"
+
+    # Will Generator - OpenAI Compatible Custom Endpoint
+    - name: "WillGen"
+      apiKey: "sk-will-backend-key-12345"
+      baseURL: "http://deployment-api-1:8000/api"
+      models:
+        default: ["will-generator"]
+        fetch: false
+      modelDisplayLabel: "Will Generator"
+      titleConvo: true
+      summarize: false
+      forcePrompt: false
+      dropParams:
+        - user
+        - frequency_penalty
+        - presence_penalty
+        - top_p
+        - stop
+      addParams:
+        max_tokens: 2000
+        temperature: 0.7
