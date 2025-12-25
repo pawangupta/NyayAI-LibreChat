@@ -2,7 +2,7 @@ version: 1.3.1
 cache: true
 
 interface:
-  customWelcome: 'Welcome to LibreChat! Enjoy your experience.'
+  customWelcome: 'Welcome to NyayAI! Your AI-powered legal assistant.'
   fileSearch: true
   endpointsMenu: true
   modelSelect: true
@@ -103,7 +103,9 @@ endpoints:
       addParams:
         max_tokens: 4096
         temperature: 0.1
-      iconURL: "/images/legal-icon.svg"
+      #iconURL: "/images/legal-icon.svg"
+      iconURL: "/assets/NyayAI.svg"
+
       description: "AI-powered contract analysis with risk detection and redlining"
       greeting: |
         👋 Welcome to the Legal Contract Analyzer!

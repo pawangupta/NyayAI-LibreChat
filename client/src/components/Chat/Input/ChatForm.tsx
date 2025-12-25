@@ -34,6 +34,8 @@ import EditBadges from './EditBadges';
 import BadgeRow from './BadgeRow';
 import Mention from './Mention';
 import store from '~/store';
+import FeatureIcons from '../../Input/FeatureIcons'; // New look & feel
+
 
 const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -345,6 +347,8 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           </div>
         </div>
       </div>
+      {/* Feature Icons */}
+      <FeatureIcons />
     </form>
   );
 });
