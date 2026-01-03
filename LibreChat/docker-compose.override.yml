@@ -8,6 +8,10 @@ networks:
 
 services:
   api:
+    build:
+      context: .
+      target: node
+    image: librechat-local
     volumes:
       - ./librechat.yaml:/app/librechat.yaml:ro
     extra_hosts:

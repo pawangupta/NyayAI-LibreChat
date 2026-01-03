@@ -98,7 +98,9 @@ export default defineConfig(({ command }) => ({
       threshold: 10240,
     }),
   ],
-  publicDir: command === 'serve' ? './public' : false,
+  // Always copy the public directory so custom branding assets (e.g., NyayAI icons, favicons)
+  // are available in both dev and production builds.
+  publicDir: './public',
   build: {
     sourcemap: process.env.NODE_ENV === 'development',
     outDir: './dist',

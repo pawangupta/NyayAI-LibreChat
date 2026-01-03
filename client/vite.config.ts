@@ -98,7 +98,8 @@ export default defineConfig(({ command }) => ({
       threshold: 10240,
     }),
   ],
-  publicDir: command === 'serve' ? './public' : false,
+  // Ensure custom branding assets (logos, icons) are copied into the build output
+  publicDir: './public',
   build: {
     sourcemap: process.env.NODE_ENV === 'development',
     outDir: './dist',
