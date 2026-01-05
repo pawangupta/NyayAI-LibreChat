@@ -16,7 +16,7 @@ interface FeatureIcon {
 
 const FeatureIcons = memo(() => {
   const { data: endpointsConfig } = useGetEndpointsQuery();
-  const conversation = useRecoilValue(store.conversation) || {};
+  const conversation = useRecoilValue(store.conversationByIndex(0)) || {};
 
   // Parse feature icons from LibreChat.yaml configuration
   const featureIcons: FeatureIcon[] = [
