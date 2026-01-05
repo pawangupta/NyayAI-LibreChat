@@ -1,4 +1,4 @@
-#export GHCR_PAT="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"
+#export GHCR_PAT="git-key-frm-file"
 docker login ghcr.io -u pawangupta --password-stdin <<<"$GHCR_PAT"
 docker pull ghcr.io/pawangupta/nyayai-librechat:latest
 
