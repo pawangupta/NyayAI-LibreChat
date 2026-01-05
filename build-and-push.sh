@@ -1,99 +1,112 @@
 #!/bin/bash
-# Build and push NyayAI LibreChat Docker image to GHCR
-# This script is optimized for building on EC2 where you have more resources
+# NyayAI LibreChat - Docker Build and Push Script
+# Builds the Docker image and pushes to GitHub Container Registry (GHCR)
+# Usage: ./build-and-push.sh [tag] [push]
+# Example: ./build-and-push.sh latest true
 
 set -e
 
-echo "=========================================="
-echo "NyayAI LibreChat Docker Build Script"
-echo "=========================================="
-echo ""
-
-# Check prerequisites
-echo "Checking prerequisites..."
-
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker not found. Please install Docker."
-    exit 1
-fi
-
-if ! command -v git &> /dev/null; then
-    echo "❌ Git not found. Please install Git."
-    exit 1
-fi
-
-echo "✓ Docker installed"
-echo "✓ Git installed"
-echo ""
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
 # Configuration
-GITHUB_USER="${GITHUB_USER:-pawangupta}"
-IMAGE_NAME="ghcr.io/${GITHUB_USER}/nyayai-librechat"
-TAG="${TAG:-latest}"
-VERSION="${VERSION:-v1.0.0}"
+REGISTRY="ghcr.io"
+OWNER="pawangupta"
+IMAGE_NAME="nyayai-librechat"
+TAG="${1:-latest}"
+SHOULD_PUSH="${2:-true}"
+IMAGE="${REGISTRY}/${OWNER}/${IMAGE_NAME}:${TAG}"
 
-echo "Build Configuration:"
-echo "  Image: $IMAGE_NAME"
-echo "  Latest tag: $TAG"
-echo "  Version tag: $VERSION"
+echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}NyayAI LibreChat - Docker Build and Push${NC}"
+echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
+echo -e "Registry: ${YELLOW}${REGISTRY}${NC}"
+echo -e "Image: ${YELLOW}${IMAGE}${NC}"
+echo -e "Tag: ${YELLOW}${TAG}${NC}"
+echo -e "Push to Registry: ${YELLOW}${SHOULD_PUSH}${NC}"
 echo ""
 
-# Check if logged in to GHCR
-echo "Checking GitHub Container Registry login..."
-if ! docker logout ghcr.io &> /dev/null; then
-    echo "⚠️  Not logged in to GHCR. Logging in..."
-    docker login ghcr.io -u "$GITHUB_USER"
-fi
-echo "✓ Logged in to GHCR"
-echo ""
-
-# Build image
-echo "Building Docker image..."
-echo "This may take 15-20 minutes on EC2..."
-echo ""
-
-docker build \
-    -t "${IMAGE_NAME}:${TAG}" \
-    -t "${IMAGE_NAME}:${VERSION}" \
-    -f Dockerfile \
-    .
-
-if [ $? -ne 0 ]; then
-    echo "❌ Build failed"
+# Check if Dockerfile exists
+if [ ! -f "Dockerfile" ]; then
+    echo -e "${RED}Error: Dockerfile not found in current directory${NC}"
+    echo "Please run this script from the NyayAI-LibreChat root directory"
     exit 1
 fi
 
-echo ""
-echo "✓ Image built successfully"
-docker images | grep nyayai-librechat
-echo ""
-
-# Push to GHCR
-echo "Pushing image to GitHub Container Registry..."
-echo ""
-
-docker push "${IMAGE_NAME}:${TAG}"
-docker push "${IMAGE_NAME}:${VERSION}"
-
-if [ $? -ne 0 ]; then
-    echo "❌ Push failed"
+# Check Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}Error: Docker is not installed or not in PATH${NC}"
     exit 1
 fi
 
+# Log in to GHCR if pushing
+if [ "$SHOULD_PUSH" = "true" ] || [ "$SHOULD_PUSH" = "1" ]; then
+    echo -e "${YELLOW}Authenticating with GitHub Container Registry (GHCR)...${NC}"
+    
+    if [ -z "$GH_TOKEN" ]; then
+        echo -e "${RED}Error: GH_TOKEN environment variable not set${NC}"
+        echo "Please set your GitHub Personal Access Token:"
+        echo "  export GH_TOKEN=your_token_here"
+        echo ""
+        echo "Token requires: read:packages, write:packages scopes"
+        exit 1
+    fi
+    
+    echo "$GH_TOKEN" | docker login ghcr.io -u pawangupta --password-stdin
+    echo -e "${GREEN}✓ GHCR authentication successful${NC}"
+    echo ""
+fi
+
+# Build Docker image
+echo -e "${YELLOW}Building Docker image: ${IMAGE}${NC}"
+echo -e "${YELLOW}This may take 15-20 minutes...${NC}"
 echo ""
-echo "✓ Image pushed successfully"
+
+docker build -t "$IMAGE" -f Dockerfile . || {
+    echo -e "${RED}✗ Docker build failed${NC}"
+    exit 1
+}
+
+echo -e "${GREEN}✓ Docker image built successfully${NC}"
 echo ""
-echo "=========================================="
-echo "Build Complete!"
-echo "=========================================="
+
+# Tag as latest if not already latest
+if [ "$TAG" != "latest" ]; then
+    echo -e "${YELLOW}Tagging image as latest...${NC}"
+    docker tag "$IMAGE" "${REGISTRY}/${OWNER}/${IMAGE_NAME}:latest"
+    echo -e "${GREEN}✓ Image tagged as latest${NC}"
+    echo ""
+fi
+
+# Push to registry if requested
+if [ "$SHOULD_PUSH" = "true" ] || [ "$SHOULD_PUSH" = "1" ]; then
+    echo -e "${YELLOW}Pushing image to GHCR: ${IMAGE}${NC}"
+    docker push "$IMAGE"
+    
+    if [ "$TAG" != "latest" ]; then
+        echo -e "${YELLOW}Pushing latest tag...${NC}"
+        docker push "${REGISTRY}/${OWNER}/${IMAGE_NAME}:latest"
+    fi
+    
+    echo -e "${GREEN}✓ Image pushed successfully${NC}"
+    echo ""
+    echo -e "${GREEN}Image is now available at: ${REGISTRY}/${OWNER}/${IMAGE_NAME}${NC}"
+else
+    echo -e "${YELLOW}Skipping push (use ./build-and-push.sh $TAG true to push)${NC}"
+    echo ""
+    echo -e "${GREEN}Image built and ready locally: ${IMAGE}${NC}"
+fi
+
 echo ""
-echo "Image is now available at:"
-echo "  - ${IMAGE_NAME}:${TAG}"
-echo "  - ${IMAGE_NAME}:${VERSION}"
+echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}Build Complete!${NC}"
+echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
-echo "To use in docker-compose.yml, ensure:"
-echo "  image: ${IMAGE_NAME}:${TAG}"
-echo ""
-echo "To make package public on GitHub:"
-echo "  https://github.com/users/${GITHUB_USER}/packages/container/nyayai-librechat/settings"
+echo -e "Next steps:"
+echo -e "  1. Test image locally: ${YELLOW}docker run -d -p 3080:3080 $IMAGE${NC}"
+echo -e "  2. Deploy to EC2: Follow EC2_DEPLOYMENT_GUIDE.md"
+echo -e "  3. Verify branding: Check favicon and custom endpoints in browser"
 echo ""
