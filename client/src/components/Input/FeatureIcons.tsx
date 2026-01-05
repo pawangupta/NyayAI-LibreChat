@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useRecoilValue } from 'recoil';
 import { FileText, Scale, FileSignature } from 'lucide-react';
-import { useGetEndpointsQuery } from 'librechat-data-provider';
+import { useGetEndpointsQuery } from '~/data-provider';
 import { cn } from '~/utils';
 import store from '~/store';
 
