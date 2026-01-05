@@ -104,7 +104,7 @@ endpoints:
         max_tokens: 4096
         temperature: 0.1
       #iconURL: "/images/legal-icon.svg"
-      iconURL: "/assets/NyayAI.svg"
+      #iconURL: "/assets/NyayAI.svg"
 
       description: "AI-powered contract analysis with risk detection and redlining"
       greeting: |
