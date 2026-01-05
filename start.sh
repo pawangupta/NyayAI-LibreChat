@@ -31,7 +31,7 @@ fi
 # Start LibreChat
 echo ""
 echo "Starting LibreChat services..."
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to be ready
 echo ""
@@ -48,7 +48,7 @@ done
 # Show status
 echo ""
 echo "════════════════════════════════════════════════════════════"
-docker-compose ps
+docker compose ps
 echo "════════════════════════════════════════════════════════════"
 echo ""
 echo "✅ LibreChat is running!"
@@ -62,7 +62,7 @@ echo "   - LegalContract (requires backend at localhost:8001)"
 echo "   - Other configured endpoints"
 echo ""
 echo "Stop service:"
-echo "   docker-compose down"
+echo "   docker compose down"
 echo ""
 echo "View logs:"
 echo "   docker logs -f LibreChat"

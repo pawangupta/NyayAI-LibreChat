@@ -4,6 +4,6 @@
 cd "$(dirname "$0")"
 
 echo "Stopping LibreChat..."
-docker-compose down
+docker compose down
 
 echo "✓ LibreChat stopped"
