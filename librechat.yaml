@@ -39,7 +39,7 @@ endpoints:
 
     - name: "WillGen"
       apiKey: "sk-will-backend-key-12345"
-      baseURL: "http://willgen-service:8000/api"
+      baseURL: "http://host.docker.internal:8000/api"
       models:
         default: ["will-generator"]
         fetch: false
@@ -60,7 +60,7 @@ endpoints:
 
     - name: "DocGen"
       apiKey: "lexdocgen-dev-key"
-      baseURL: "http://lexdocgen-service:8000/v1"
+      baseURL: "http://host.docker.internal:8000/v1"
       models:
         default: ["doc-generator"]
         fetch: false
