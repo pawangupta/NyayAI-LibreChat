@@ -21,7 +21,7 @@ endpoints:
   custom:
     - name: "Naya-AI"
       apiKey: "ollama"
-      baseURL: "http://host.docker.internal:11434/v1"
+      baseURL: "http://ollama:11434/v1"
       models:
         default:
           - "gpt-oss:20b"
@@ -39,7 +39,7 @@ endpoints:
 
     - name: "WillGen"
       apiKey: "sk-will-backend-key-12345"
-      baseURL: "http://host.docker.internal:8000/api"
+      baseURL: "http://willgen-service:8000/api"
       models:
         default: ["will-generator"]
         fetch: false
@@ -60,7 +60,7 @@ endpoints:
 
     - name: "DocGen"
       apiKey: "lexdocgen-dev-key"
-      baseURL: "http://host.docker.internal:8000/v1"
+      baseURL: "http://lexdocgen-service:8000/v1"
       models:
         default: ["doc-generator"]
         fetch: false
@@ -81,7 +81,7 @@ endpoints:
 
     - name: "LegalContract"
       apiKey: "legal-contract-dev-key"
-      baseURL: "http://host.docker.internal:8001/v1"
+      baseURL: "http://legal-contract-agent:8001/v1"
       models:
         default: ["contract-analyzer"]
         fetch: false

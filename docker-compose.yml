@@ -11,6 +11,8 @@ services:
       - rag_api
     image: ghcr.io/pawangupta/nyayai-librechat:latest
     restart: always
+    env_file:
+      - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
