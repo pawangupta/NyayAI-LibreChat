@@ -230,12 +230,13 @@ export default function Artifacts() {
                     : '-translate-x-2 opacity-0',
                 )}
               >
-                <Radio
+                {/* Hide Code/Preview toggle - always show Preview only */}
+                {/* <Radio
                   options={tabOptions}
                   value={activeTab}
                   onChange={setActiveTab}
                   disabled={isMutating && activeTab !== 'code'}
-                />
+                /> */}
               </div>
             )}
 
