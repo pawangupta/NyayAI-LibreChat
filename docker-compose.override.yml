@@ -3,6 +3,12 @@
 
 services:
   api:
+    # Build locally instead of pulling GHCR
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nyayai-librechat-local:latest
+    pull_policy: never
     volumes:
       - ./librechat.yaml:/app/librechat.yaml:ro
     extra_hosts:

@@ -58,19 +58,6 @@ module.exports = {
         'slide-out-right': 'slide-out-right 300ms cubic-bezier(0.25, 0.1, 0.25, 1)',
       },
       colors: {
-        // Claude-inspired warm palette
-        claude: {
-          50: '#fef9f3',
-          100: '#fdf3e7',
-          200: '#fae5c3',
-          300: '#f7d7a0',
-          400: '#f1bb59',
-          500: '#cc8d3d', // primary accent
-          600: '#b0732e',
-          700: '#8a5922',
-          800: '#654118',
-          900: '#3f2a0f',
-        },
         gray: {
           20: '#ececf1',
           50: '#f7f7f8',
