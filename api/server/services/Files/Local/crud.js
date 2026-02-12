@@ -268,14 +268,19 @@ const deleteLocalFile = async (req, file) => {
  *            - filepath: The path where the file is saved.
  *            - bytes: The size of the file in bytes.
  */
-async function uploadLocalFile({ req, file, file_id }) {
+async function uploadLocalFile({ req, file, file_id, conversationId }) {
   const appConfig = req.config;
   const inputFilePath = file.path;
   const inputBuffer = await fs.promises.readFile(inputFilePath);
   const bytes = Buffer.byteLength(inputBuffer);
 
   const { uploads } = appConfig.paths;
-  const userPath = path.join(uploads, req.user.id);
+  const safeConversationId =
+    typeof conversationId === 'string' && /^[a-zA-Z0-9_-]+$/.test(conversationId)
+      ? conversationId
+      : null;
+  const targetFolder = safeConversationId ?? req.user.id;
+  const userPath = path.join(uploads, targetFolder);
 
   if (!fs.existsSync(userPath)) {
     fs.mkdirSync(userPath, { recursive: true });
@@ -285,7 +290,7 @@ async function uploadLocalFile({ req, file, file_id }) {
   const newPath = path.join(userPath, fileName);
 
   await fs.promises.writeFile(newPath, inputBuffer);
-  const filepath = path.posix.join('/', 'uploads', req.user.id, path.basename(newPath));
+  const filepath = path.posix.join('/', 'uploads', targetFolder, path.basename(newPath));
 
   let height, width;
   if (file.mimetype && file.mimetype.startsWith('image/')) {

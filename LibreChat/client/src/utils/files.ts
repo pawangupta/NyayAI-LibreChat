@@ -22,7 +22,7 @@ export const partialTypes = ['text/x-'];
 
 const textDocument = {
   paths: TextPaths,
-  fill: '#FF5588',
+  fill: '#111827',
   title: 'Document',
 };
 

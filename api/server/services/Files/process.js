@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const FormData = require('form-data');
 const mime = require('mime');
 const { v4 } = require('uuid');
 const {
@@ -36,6 +38,95 @@ const { LB_QueueAsyncCall } = require('~/server/utils/queue');
 const { getStrategyFunctions } = require('./strategies');
 const { determineFileType } = require('~/server/utils');
 const { STTService } = require('./Audio/STTService');
+
+/**
+ * Extracts a conversation/session identifier from multiple request surfaces.
+ * Falls back to parsing the Referer URL (`/c/<id>`) if headers/body are missing it.
+ */
+const getConversationId = (req, metadata = {}) => {
+  const explicit =
+    metadata.conversationId ||
+    metadata.conversation_id ||
+    req.body?.conversationId ||
+    req.body?.conversation_id ||
+    req.query?.conversationId ||
+    req.headers['x-librechat-session'] ||
+    req.headers['x-conversation-id'];
+
+  if (typeof explicit === 'string' && explicit.trim()) {
+    return explicit.trim();
+  }
+
+  const ref = req.headers?.referer || req.headers?.referrer || '';
+  const match = ref.match(/\/c\/([a-zA-Z0-9-]{8,})/);
+  if (match?.[1]) {
+    return match[1];
+  }
+
+  return undefined;
+};
+
+const getWillgenUploadUrl = () => process.env.WILLGEN_UPLOAD_URL;
+
+/**
+ * Forward a locally stored upload to the WillGen API so it is discoverable by the Will agent.
+ * Best-effort: errors are logged but do not block the LibreChat upload flow.
+ */
+const forwardToWillGen = async ({ req, filepath, filename, conversationId }) => {
+  const uploadUrl = getWillgenUploadUrl();
+  if (!uploadUrl) return;
+
+  // Only forward local uploads with a real file on disk
+  if (!filepath) return;
+
+  // Accept both /uploads/... and /app/uploads/... formats
+  let relative;
+  if (filepath.startsWith('uploads/')) {
+    relative = filepath.replace(/^uploads\//, '');
+  } else {
+    const match = filepath.match(/\/uploads\/(.+)/);
+    if (!match?.[1]) return;
+    relative = match[1];
+  }
+
+  const appConfig = req.config;
+  const absolutePath = path.join(appConfig.paths.uploads, relative);
+
+  try {
+    await fs.promises.access(absolutePath, fs.constants.R_OK);
+  } catch (err) {
+    logger.warn('[willgen_forward] File not accessible', { filepath, error: err?.message });
+    return;
+  }
+
+  const sessionId = conversationId || req.headers['x-librechat-session'] || req.user?.id;
+  if (!sessionId) {
+    logger.warn('[willgen_forward] Missing session id; skipping forward');
+    return;
+  }
+
+  const form = new FormData();
+  form.append('file', fs.createReadStream(absolutePath), filename || path.basename(absolutePath));
+
+  const headers = {
+    ...form.getHeaders(),
+    'X-LibreChat-Session': sessionId,
+  };
+
+  try {
+    await axios.post(uploadUrl, form, { headers, timeout: 12_000 });
+    logger.info('[willgen_forward] Forwarded upload to WillGen', {
+      session: sessionId.slice(0, 12),
+      filename,
+      target: uploadUrl,
+    });
+  } catch (err) {
+    logger.warn('[willgen_forward] Failed to forward upload', {
+      error: err?.message,
+      target: uploadUrl,
+    });
+  }
+};
 
 /**
  * Creates a modular file upload wrapper that ensures filename sanitization
@@ -424,6 +515,7 @@ const processFileUpload = async ({ req, res, metadata }) => {
   const source = isAssistantUpload ? assistantSource : appConfig.fileStrategy;
   const { handleFileUpload } = getStrategyFunctions(source);
   const { file_id, temp_file_id = null } = metadata;
+  const conversationId = getConversationId(req, metadata);
 
   /** @type {OpenAI | undefined} */
   let openai;
@@ -445,6 +537,7 @@ const processFileUpload = async ({ req, res, metadata }) => {
     req,
     file,
     file_id,
+    conversationId,
     openai,
   });
 
@@ -492,6 +585,14 @@ const processFileUpload = async ({ req, res, metadata }) => {
     true,
   );
   res.status(200).json({ message: 'File uploaded and processed successfully', ...result });
+
+  // Best-effort forward of Excel uploads to WillGen (option 3)
+  forwardToWillGen({
+    req,
+    filepath: _filepath,
+    filename: filename ?? sanitizeFilename(file.originalname),
+    conversationId,
+  }).catch(() => {});
 };
 
 /**
@@ -509,6 +610,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
   const { file } = req;
   const appConfig = req.config;
   const { agent_id, tool_resource, file_id, temp_file_id = null } = metadata;
+  const conversationId = getConversationId(req, metadata);
 
   let messageAttachment = !!metadata.message_file;
 
@@ -656,6 +758,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
       file_id,
       basePath,
       entity_id,
+      conversationId,
     });
 
     // SECOND: Upload to Vector DB
@@ -680,6 +783,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
       file_id,
       basePath,
       entity_id,
+      conversationId,
     });
   }
 

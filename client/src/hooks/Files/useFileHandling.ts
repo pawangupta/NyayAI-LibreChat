@@ -164,6 +164,9 @@ const useFileHandling = (params?: UseFileHandling) => {
     formData.append('endpointType', endpointType ?? '');
     formData.append('file', extendedFile.file as File, encodeURIComponent(filename));
     formData.append('file_id', extendedFile.file_id);
+    if (conversation?.conversationId) {
+      formData.append('conversationId', conversation.conversationId);
+    }
 
     const width = extendedFile.width ?? 0;
     const height = extendedFile.height ?? 0;

@@ -1,6 +1,13 @@
 import { useMemo } from 'react';
 import { Blocks, MCPIcon, AttachmentIcon } from '@librechat/client';
-import { Database, Bookmark, Settings2, ArrowRightToLine, MessageSquareQuote } from 'lucide-react';
+import {
+  Database,
+  Bookmark,
+  Settings2,
+  ArrowRightToLine,
+  MessageSquareQuote,
+  FileText,
+} from 'lucide-react';
 import {
   Permissions,
   EModelEndpoint,
@@ -19,6 +26,7 @@ import PromptsAccordion from '~/components/Prompts/PromptsAccordion';
 import Parameters from '~/components/SidePanel/Parameters/Panel';
 import FilesPanel from '~/components/SidePanel/Files/Panel';
 import MCPPanel from '~/components/SidePanel/MCP/MCPPanel';
+import WillPreviewPanel from '~/components/SidePanel/WillPreview/Panel';
 import { useGetStartupConfig } from '~/data-provider';
 import { useHasAccess } from '~/hooks';
 
@@ -131,6 +139,16 @@ export default function useSideNavLinks({
         icon: Settings2,
         id: 'parameters',
         Component: Parameters,
+      });
+    }
+
+    if (endpoint === 'WillGen') {
+      links.push({
+        title: 'Will Preview',
+        label: '',
+        icon: FileText,
+        id: 'will-preview',
+        Component: WillPreviewPanel,
       });
     }
 

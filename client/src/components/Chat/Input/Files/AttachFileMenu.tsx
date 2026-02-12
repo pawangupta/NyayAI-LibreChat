@@ -93,11 +93,54 @@ const AttachFileMenu = ({
     if (fileType === 'image') {
       inputRef.current.accept = 'image/*';
     } else if (fileType === 'document') {
-      inputRef.current.accept = '.pdf,application/pdf';
+      inputRef.current.accept = [
+        '.pdf',
+        'application/pdf',
+        '.doc',
+        '.docx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.ppt',
+        '.pptx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xls',
+        '.xlsx',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ].join(',');
     } else if (fileType === 'multimodal') {
-      inputRef.current.accept = 'image/*,.pdf,application/pdf';
+      inputRef.current.accept = [
+        'image/*',
+        '.pdf',
+        'application/pdf',
+        '.doc',
+        '.docx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.ppt',
+        '.pptx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xls',
+        '.xlsx',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ].join(',');
     } else if (fileType === 'google_multimodal') {
-      inputRef.current.accept = 'image/*,.pdf,application/pdf,video/*,audio/*';
+      inputRef.current.accept = [
+        'image/*',
+        '.pdf',
+        'application/pdf',
+        '.doc',
+        '.docx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.ppt',
+        '.pptx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xls',
+        '.xlsx',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'video/*',
+        'audio/*',
+      ].join(',');
     } else {
       inputRef.current.accept = '';
     }

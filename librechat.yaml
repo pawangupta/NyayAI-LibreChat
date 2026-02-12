@@ -41,7 +41,9 @@ endpoints:
     # Will Generator - OpenAI Compatible Custom Endpoint
     - name: "WillGen"
       apiKey: "sk-will-backend-key-12345"
-      baseURL: "http://willgen-service:8000/api"
+      baseURL: "http://willgen-api:8000/api"
+      headers:
+        X-LibreChat-Session: '{{LIBRECHAT_BODY_CONVERSATIONID}}'
       models:
         default: ["will-generator"]
         fetch: false
