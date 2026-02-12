@@ -19,17 +19,35 @@ registration:
 
 endpoints:
   custom:
-  
+    # Ollama
+    - name: "Naya-AI"
+      apiKey: "ollama"
+      baseURL: "http://host.docker.internal:11434/v1"
+      models:
+        default: 
+          - "gpt-oss:20b"
+          - "llama3.2:3b"
+        fetch: false
+      titleConvo: true
+      titleModel: "gpt-oss:20b"
+      summarize: false
+      summaryModel: "gpt-oss:20b"
+      forcePrompt: false
+      modelDisplayLabel: "Ollama"
+      group: "ParaLx" 
+      dropParams:
+        - "user"
+
     # Will Generator - OpenAI Compatible Custom Endpoint
-    - name: "Drafting Assistant"
+    - name: "WillGen"
       apiKey: "sk-will-backend-key-12345"
       baseURL: "http://willgen-api:8000/api"
       headers:
         X-LibreChat-Session: '{{LIBRECHAT_BODY_CONVERSATIONID}}'
       models:
-        default: ["Will Drafting Assistant"]
+        default: ["will-generator"]
         fetch: false
-      modelDisplayLabel: "Will Drafting Assistant"
+      modelDisplayLabel: "Will Generator"
       group: "ParaLx" 
       titleConvo: true
       summarize: false
@@ -44,18 +62,38 @@ endpoints:
         max_tokens: 2000
         temperature: 0.7
 
+    - name: "DocGen"
+      apiKey: "lexdocgen-dev-key"
+      baseURL: "http://lexdocgen-service:8000/v1"
+      models:
+        default: ["doc-generator"]
+        fetch: false
+      modelDisplayLabel: "Document Generator"
+      group: "ParaLx"
+      titleConvo: false
+      summarize: false
+      forcePrompt: false
+      dropParams:
+        - user
+        - frequency_penalty
+        - presence_penalty
+        - top_p
+        - stop
+      addParams:
+        max_tokens: 2000
+        temperature: 0.7
 
-    # Tabular Contract Review
-    - name: "Contract Review"
+    # Legal Contract Analysis Agent
+    - name: "LegalContract"
       apiKey: "legal-contract-dev-key"
       baseURL: "http://host.docker.internal:8001/v1"
       models:
-        default: ["Tabular Contract Review"]
+        default: ["contract-analyzer"]
         fetch: false
-      modelDisplayLabel: "Tabular Contract Review"
+      modelDisplayLabel: "Legal Contract Agent"
       group: "ParaLx"
       titleConvo: true
-      titleModel: "Tabular Contract Review"
+      titleModel: "contract-analyzer"
       summarize: false
       forcePrompt: false
       dropParams:
@@ -83,22 +121,3 @@ endpoints:
         - Search: **"Find termination clauses"** or **"Show liability provisions"**
         
         📎 Simply attach your PDF, DOCX, or TXT contract file and tell me what you'd like to do!
-
-  # Ollama
-    - name: "Naya-AI"
-      apiKey: "ollama"
-      baseURL: "http://host.docker.internal:11434/v1"
-      models:
-        default: 
-          - "gpt-oss:20b"
-          - "llama3.2:3b"
-        fetch: false
-      titleConvo: true
-      titleModel: "gpt-oss:20b"
-      summarize: false
-      summaryModel: "gpt-oss:20b"
-      forcePrompt: false
-      modelDisplayLabel: "Ollama"
-      group: "ParaLx" 
-      dropParams:
-        - "user"
