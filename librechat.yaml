@@ -84,6 +84,44 @@ endpoints:
         
         📎 Simply attach your PDF, DOCX, or TXT contract file and tell me what you'd like to do!
 
+    # Legal Research - OpenAI Compatible Custom Endpoint
+    - name: "Legal Research"
+      apiKey: "legal-research-dev-key"
+      baseURL: "http://host.docker.internal:8001/v1"
+      models:
+        default: ["Legal Research Assistant"]
+        fetch: false
+      modelDisplayLabel: "Legal Research Assistant"
+      group: "ParaLx"
+      titleConvo: true
+      titleModel: "Legal Research Assistant"
+      summarize: false
+      forcePrompt: false
+      dropParams:
+        - user
+        - frequency_penalty
+        - presence_penalty
+        - top_p
+        - stop
+      addParams:
+        max_tokens: 4096
+        temperature: 0.1
+      #iconURL: "/images/legal-icon.svg"
+      #iconURL: "/assets/NyayAI.svg"
+
+      description: "AI-powered legal research assistant for case law, statutes, and regulations"
+      greeting: |
+        👋 Welcome to the Legal Research Assistant!
+        
+        I can help you conduct legal research on case law, statutes, and regulations.
+        
+        **Quick Commands:**
+        - Ask: **"Find relevant case law on [topic]"**
+        - Ask: **"What are the key statutes related to [topic]?"**
+        - Ask: **"Summarize the legal landscape on [topic]"**
+        
+        📚 Just tell me your research topic or question, and I'll get started !
+
   # Ollama
     - name: "Naya-AI"
       apiKey: "ollama"
