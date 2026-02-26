@@ -1,92 +1,117 @@
-import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { AlertTriangle, FileText, ExternalLink, Download } from 'lucide-react';
-import { useGetMessagesByConvoId } from '~/data-provider';
+import { useState, useEffect, useRef } from 'react';
+import * as mammoth from 'mammoth';
+import { FileText, Download, Loader2, AlertTriangle } from 'lucide-react';
 
-const downloadRegex = /(https?:\/\/[\w\-.:%]+\/[\w\-./]*\/v1\/files\/download\/[A-Za-z0-9_-]+)/i;
+interface WillPreviewPanelProps {
+  /** Absolute URL to the DOCX file, e.g. http://localhost:8003/v1/files/download/<id> */
+  downloadUrl: string;
+}
 
-const buildEmbedUrl = (downloadUrl: string) =>
-  `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(downloadUrl)}`;
+/** Rewrite absolute WillGen URLs through LibreChat's same-origin proxy to avoid CORS. */
+function toProxyUrl(url: string): string {
+  try {
+    const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+    const parsed = new URL(url, baseOrigin);
 
-export default function WillPreviewPanel() {
-  const { conversationId = '' } = useParams();
+    const alreadyProxiedV1 = parsed.pathname.match(/^\/api\/willgen\/v1\/files\/download\/([^/?#]+)/);
+    if (alreadyProxiedV1?.[1]) {
+      return `/api/willgen/files/download/${alreadyProxiedV1[1]}`;
+    }
 
-  const { data: messages = [] } = useGetMessagesByConvoId(conversationId, {
-    enabled: Boolean(conversationId),
-  });
+    const alreadyProxied = parsed.pathname.match(/^\/api\/willgen\/files\/download\/([^/?#]+)/);
+    if (alreadyProxied?.[1]) {
+      return `/api/willgen/files/download/${alreadyProxied[1]}`;
+    }
 
-  const downloadUrl = useMemo(() => {
-    // Search newest-to-oldest WillGen assistant message for a download link
-    for (let i = messages.length - 1; i >= 0; i -= 1) {
-      const msg = messages[i];
-      if (msg.endpoint !== 'WillGen') continue;
-      const text = msg.text || '';
-      const match = text.match(downloadRegex);
-      if (match && match[1]) {
-        return match[1];
-      }
+    const match = parsed.pathname.match(/^\/v1\/files\/download\/([^/?#]+)/);
+    if (match?.[1]) {
+      return `/api/willgen/files/download/${match[1]}`;
     }
     return '';
-  }, [messages]);
-
-  if (!downloadUrl) {
-    return (
-      <div className="space-y-3 rounded-md border border-dashed border-border-light bg-surface-secondary p-4 text-sm text-text-secondary">
-        <div className="flex items-center gap-2 font-medium text-text-primary">
-          <AlertTriangle className="h-4 w-4" />
-          No draft available yet
-        </div>
-        <p className="leading-relaxed">
-          Generate a Will draft first. After the assistant returns the download link, the preview
-          and download actions will appear here.
-        </p>
-      </div>
-    );
+  } catch {
+    return '';
   }
+}
 
-  const embedUrl = buildEmbedUrl(downloadUrl);
+export default function WillPreviewPanel({ downloadUrl }: WillPreviewPanelProps) {
+  const [html, setHtml] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const prevUrlRef = useRef('');
+
+  const proxyUrl = downloadUrl ? toProxyUrl(downloadUrl) : '';
+  const resolvedDownloadUrl = proxyUrl || downloadUrl;
+
+  useEffect(() => {
+    if (!proxyUrl || proxyUrl === prevUrlRef.current) {
+      if (!proxyUrl) {
+        setError('Invalid download URL');
+      }
+      return;
+    }
+    prevUrlRef.current = proxyUrl;
+
+    setLoading(true);
+    setError('');
+    setHtml('');
+
+    fetch(proxyUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then((buf) => mammoth.convertToHtml({ arrayBuffer: buf }))
+      .then((result) => {
+        setHtml(result.value);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to load document');
+        setLoading(false);
+      });
+  }, [downloadUrl]);
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-md border border-border-light bg-surface-secondary p-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-            <FileText className="h-4 w-4" />
-            Latest Will draft
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1 font-medium text-white hover:bg-accent/90"
-            >
-              <Download className="h-4 w-4" />
-              Download DOCX
-            </a>
-            <a
-              href={embedUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-md border border-border-light px-3 py-1 font-medium text-text-primary hover:bg-surface-1"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open in new tab
-            </a>
-          </div>
+    <div className="flex h-full flex-col gap-0">
+      {/* Toolbar */}
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border-light bg-surface-secondary px-3 py-2">
+        <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+          <FileText className="h-4 w-4" />
+          Will Draft Preview
         </div>
-        <p className="mt-2 text-xs text-text-secondary leading-relaxed">
-          The preview uses the Office web viewer. If it does not load, open the DOCX in a new tab or
-          download it directly.
-        </p>
+        <a
+          href={resolvedDownloadUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download DOCX
+        </a>
       </div>
-      <div className="overflow-hidden rounded-md border border-border-light shadow-sm">
-        <iframe
-          title="Will draft preview"
-          src={embedUrl}
-          className="h-[520px] w-full bg-white"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        />
+
+      {/* Content area */}
+      <div className="min-h-0 flex-1 overflow-y-auto bg-white px-6 py-4">
+        {loading && (
+          <div className="flex h-full items-center justify-center gap-2 text-sm text-text-secondary">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading document…
+          </div>
+        )}
+        {error && (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-sm">
+            <AlertTriangle className="h-8 w-8 text-yellow-500" />
+            <p className="font-medium text-text-primary">Could not load preview</p>
+            <p className="text-text-secondary">{error}</p>
+          </div>
+        )}
+        {html && (
+          <div
+            className="will-preview prose max-w-none text-sm leading-relaxed text-gray-900"
+            /* mammoth output is safe — no user-supplied HTML */
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
       </div>
     </div>
   );

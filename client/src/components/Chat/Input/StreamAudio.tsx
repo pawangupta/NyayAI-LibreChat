@@ -78,7 +78,7 @@ export default function StreamAudio({ index = 0 }) {
           setGlobalAudioURL(null);
         }
 
-        let cacheKey = latestMessage?.text ?? '';
+        let cacheKey = typeof latestMessage?.text === 'string' ? latestMessage.text : '';
         const cache = await caches.open('tts-responses');
         const cachedResponse = await cache.match(cacheKey);
 
@@ -142,7 +142,7 @@ export default function StreamAudio({ index = 0 }) {
           const targetMessage = latestMessages.find(
             (msg) => msg.messageId === latestMessage?.messageId,
           );
-          cacheKey = targetMessage?.text ?? '';
+          cacheKey = typeof targetMessage?.text === 'string' ? targetMessage.text : '';
           if (!cacheKey) {
             throw new Error('Cache key not found');
           }

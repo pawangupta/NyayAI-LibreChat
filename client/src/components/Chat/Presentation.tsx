@@ -4,15 +4,38 @@ import { FileSources, LocalStorageKeys } from 'librechat-data-provider';
 import type { ExtendedFile } from '~/common';
 import { useDeleteFilesMutation } from '~/data-provider';
 import DragDropWrapper from '~/components/Chat/Input/Files/DragDropWrapper';
-import { EditorProvider, SidePanelProvider, ArtifactsProvider } from '~/Providers';
+import { EditorProvider, SidePanelProvider, ArtifactsProvider, useChatContext } from '~/Providers';
 import Artifacts from '~/components/Artifacts/Artifacts';
+import WillPreviewPanel from '~/components/SidePanel/WillPreview/Panel';
 import { SidePanelGroup } from '~/components/SidePanel';
 import { useSetFilesToDelete } from '~/hooks';
+import { useWillDownloadUrl } from '~/hooks/useWillDownloadUrl';
 import store from '~/store';
+
+const WILL_DRAFTING_MODEL = 'Will Drafting Assistant';
+const WILL_DRAFTING_LABEL = 'Drafting Assistant';
+
+function isWillDraftingConvo(
+  conversation: { model?: string | null; chatGptLabel?: string | null; endpoint?: string | null } | undefined | null,
+): boolean {
+  if (!conversation) return false;
+  return (
+    conversation.endpoint === WILL_DRAFTING_LABEL ||
+    conversation.model === WILL_DRAFTING_MODEL ||
+    conversation.chatGptLabel === WILL_DRAFTING_LABEL ||
+    conversation.chatGptLabel === WILL_DRAFTING_MODEL
+  );
+}
 
 export default function Presentation({ children }: { children: React.ReactNode }) {
   const artifacts = useRecoilValue(store.artifactsState);
   const artifactsVisibility = useRecoilValue(store.artifactsVisibility);
+  const { conversation } = useChatContext();
+
+  // Detect Will Drafting conversation and look for generated download URL
+  const isWillConvo = isWillDraftingConvo(conversation);
+  const convId = (isWillConvo ? conversation?.conversationId : '') ?? '';
+  const willDownloadUrl = useWillDownloadUrl(convId);
 
   const setFilesToDelete = useSetFilesToDelete();
 
@@ -74,6 +97,14 @@ export default function Presentation({ children }: { children: React.ReactNode }
     return null;
   }, [artifactsVisibility, artifacts]);
 
+  /** Only show the Will Preview panel once the DOCX has been generated */
+  const willPreviewElement = useMemo(() => {
+    if (willDownloadUrl) {
+      return <WillPreviewPanel downloadUrl={willDownloadUrl} />;
+    }
+    return null;
+  }, [willDownloadUrl]);
+
   return (
     <DragDropWrapper className="relative flex w-full grow overflow-hidden bg-presentation">
       <SidePanelProvider>
@@ -81,7 +112,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
           defaultLayout={defaultLayout}
           fullPanelCollapse={fullCollapse}
           defaultCollapsed={defaultCollapsed}
-          artifacts={artifactsElement}
+          artifacts={artifactsElement ?? willPreviewElement}
         >
           <main className="flex h-full flex-col overflow-y-auto" role="main">
             {children}

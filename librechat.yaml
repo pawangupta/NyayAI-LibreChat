@@ -48,7 +48,7 @@ endpoints:
     # Tabular Contract Review
     - name: "Contract Review"
       apiKey: "legal-contract-dev-key"
-      baseURL: "http://host.docker.internal:8001/v1"
+      baseURL: "http://host.docker.internal:8000/v1"
       models:
         default: ["Tabular Contract Review"]
         fetch: false
@@ -87,7 +87,7 @@ endpoints:
     # Legal Research - OpenAI Compatible Custom Endpoint
     - name: "Legal Research"
       apiKey: "legal-research-dev-key"
-      baseURL: "http://host.docker.internal:8001/v1"
+      baseURL: "http://host.docker.internal:8002/v1"
       models:
         default: ["Legal Research Assistant"]
         fetch: false

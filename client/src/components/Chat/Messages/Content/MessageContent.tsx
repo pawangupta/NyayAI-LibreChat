@@ -146,7 +146,20 @@ const MessageContent = ({
   const { message } = props;
   const { messageId } = message;
 
-  const { thinkingContent, regularContent } = useMemo(() => parseThinkingContent(text), [text]);
+  const safeText = useMemo(() => {
+    if (typeof text === 'string') {
+      return text;
+    }
+    if (typeof text === 'number') {
+      return String(text);
+    }
+    return '';
+  }, [text]);
+
+  const { thinkingContent, regularContent } = useMemo(
+    () => parseThinkingContent(safeText),
+    [safeText],
+  );
   const showRegularCursor = useMemo(() => isLast && isSubmitting, [isLast, isSubmitting]);
 
   const unfinishedMessage = useMemo(
@@ -162,11 +175,11 @@ const MessageContent = ({
   );
 
   if (error) {
-    return <ErrorMessage message={message} text={text} />;
+    return <ErrorMessage message={message} text={safeText} />;
   }
 
   if (edit) {
-    return <EditMessage text={text} isSubmitting={isSubmitting} {...props} />;
+    return <EditMessage text={safeText} isSubmitting={isSubmitting} {...props} />;
   }
 
   return (
