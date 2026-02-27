@@ -30,6 +30,17 @@ const usernameSchema = z
     message: 'Potential injection attack detected',
   });
 
+const companyNameSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(63)
+  .transform((value) => value.toLowerCase())
+  .refine((value) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(value), {
+    message:
+      'Company name must be bucket-safe: lowercase letters, numbers, and hyphens only (no spaces/special characters)',
+  });
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z
@@ -44,11 +55,8 @@ const loginSchema = z.object({
 const registerSchema = z
   .object({
     name: z.string().min(3).max(80),
-    username: z
-      .union([z.literal(''), usernameSchema])
-      .transform((value) => (value === '' ? null : value))
-      .optional()
-      .nullable(),
+    company_name: companyNameSchema,
+    username: usernameSchema,
     email: z.string().email(),
     password: z
       .string()

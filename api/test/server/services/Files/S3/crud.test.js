@@ -32,7 +32,8 @@ describe('S3 crud.js - test only new parameter changes', () => {
     getSignedUrl.mockResolvedValue('https://test-presigned-url.com');
 
     await getS3URL({
-      userId: 'user123',
+      username: 'user123',
+      companySlug: 'vk-law',
       fileName: 'test.pdf',
       customFilename: 'cleaned_filename.pdf',
     });
@@ -49,7 +50,8 @@ describe('S3 crud.js - test only new parameter changes', () => {
     getSignedUrl.mockResolvedValue('https://test-presigned-url.com');
 
     await getS3URL({
-      userId: 'user123',
+      username: 'user123',
+      companySlug: 'vk-law',
       fileName: 'test.pdf',
       contentType: 'application/pdf',
     });
@@ -63,7 +65,8 @@ describe('S3 crud.js - test only new parameter changes', () => {
     getSignedUrl.mockResolvedValue('https://test-presigned-url.com');
 
     const result = await getS3URL({
-      userId: 'user123',
+      username: 'user123',
+      companySlug: 'vk-law',
       fileName: 'test.pdf',
     });
 

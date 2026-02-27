@@ -2,7 +2,30 @@ const { getBalanceConfig } = require('@librechat/api');
 const { FileSources } = require('librechat-data-provider');
 const { getStrategyFunctions } = require('~/server/services/Files/strategies');
 const { resizeAvatar } = require('~/server/services/Files/images/avatar');
-const { updateUser, createUser, getUserById } = require('~/models');
+const { updateUser, createUser, getUserById, findUser } = require('~/models');
+const { resolveCompanyIdentity } = require('~/server/utils/company');
+
+async function resolveUniqueTenantUsername(companySlug, username) {
+  const base = String(username || 'user')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9_.-]/g, '')
+    .slice(0, 70) || 'user';
+
+  let candidate = base;
+  let suffix = 1;
+  while (suffix < 1000) {
+    const existing = await findUser({ company_slug: companySlug, username: candidate }, '_id');
+    if (!existing) {
+      return candidate;
+    }
+    suffix += 1;
+    candidate = `${base}-${suffix}`.slice(0, 79);
+  }
+
+  return `${base}-${Date.now().toString().slice(-6)}`.slice(0, 79);
+}
 
 /**
  * Updates the avatar URL and email of an existing user. If the user's avatar URL does not include the query parameter
@@ -38,7 +61,13 @@ const handleExistingUser = async (oldUser, avatarUrl, appConfig, email) => {
       input: avatarUrl,
     });
     const { processAvatar } = getStrategyFunctions(fileStrategy);
-    updatedAvatar = await processAvatar({ buffer: resizedBuffer, userId, manual: 'false' });
+    updatedAvatar = await processAvatar({
+      buffer: resizedBuffer,
+      userId,
+      username: oldUser.username,
+      companySlug: oldUser.company_slug,
+      manual: 'false',
+    });
   }
 
   if (updatedAvatar) {
@@ -48,6 +77,10 @@ const handleExistingUser = async (oldUser, avatarUrl, appConfig, email) => {
   /** Update email if it has changed */
   if (email && email.trim() !== oldUser.email) {
     updates.email = email.trim();
+  }
+
+  if (!oldUser.company_name || !oldUser.company_slug) {
+    Object.assign(updates, resolveCompanyIdentity(oldUser.company_name));
   }
 
   if (Object.keys(updates).length > 0) {
@@ -86,13 +119,19 @@ const createSocialUser = async ({
   name,
   appConfig,
   emailVerified,
+  company_name,
 }) => {
+  const companyIdentity = resolveCompanyIdentity(company_name);
+  const tenantUsername = await resolveUniqueTenantUsername(companyIdentity.company_slug, username);
+
   const update = {
     email,
     avatar: avatarUrl,
     provider,
     [providerKey]: providerId,
-    username,
+    username: tenantUsername,
+    company_name: companyIdentity.company_name,
+    company_slug: companyIdentity.company_slug,
     name,
     emailVerified,
   };
@@ -111,6 +150,8 @@ const createSocialUser = async ({
     const avatar = await processAvatar({
       buffer: resizedBuffer,
       userId: newUserId,
+      username: tenantUsername,
+      companySlug: companyIdentity.company_slug,
       manual: 'false',
     });
     await updateUser(newUserId, { avatar });

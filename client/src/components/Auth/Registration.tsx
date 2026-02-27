@@ -63,16 +63,24 @@ const Registration: React.FC = () => {
     },
   });
 
-  const renderInput = (id: string, label: TranslationKeys, type: string, validation: object) => (
+  const renderInput = (
+    id: string,
+    label: TranslationKeys | string,
+    type: string,
+    validation: object,
+  ) => (
+    (() => {
+      const resolvedLabel = typeof label === 'string' ? label : localize(label);
+      return (
     <div className="mb-4">
       <div className="relative">
         <input
           id={id}
           type={type}
           autoComplete={id}
-          aria-label={localize(label)}
+          aria-label={resolvedLabel}
           {...register(
-            id as 'name' | 'email' | 'username' | 'password' | 'confirm_password',
+            id as 'name' | 'company_name' | 'email' | 'username' | 'password' | 'confirm_password',
             validation,
           )}
           aria-invalid={!!errors[id]}
@@ -84,7 +92,7 @@ const Registration: React.FC = () => {
           htmlFor={id}
           className="absolute start-3 top-1.5 z-10 origin-[0] -translate-y-4 scale-75 transform bg-surface-primary px-2 text-sm text-text-secondary-alt duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-1.5 peer-focus:-translate-y-4 peer-focus:scale-75 peer-focus:px-2 peer-focus:text-green-500 rtl:peer-focus:left-auto rtl:peer-focus:translate-x-1/4"
         >
-          {localize(label)}
+          {resolvedLabel}
         </label>
       </div>
       {errors[id] && (
@@ -93,6 +101,8 @@ const Registration: React.FC = () => {
         </span>
       )}
     </div>
+      );
+    })()
   );
 
   return (
@@ -137,7 +147,23 @@ const Registration: React.FC = () => {
                 message: localize('com_auth_name_max_length'),
               },
             })}
+            {renderInput('company_name', 'Company Name', 'text', {
+              required: 'Company name is required',
+              minLength: {
+                value: 2,
+                message: 'Company name must be at least 2 characters',
+              },
+              maxLength: {
+                value: 63,
+                message: 'Company name must be at most 63 characters',
+              },
+              pattern: {
+                value: /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/,
+                message: 'Use lowercase letters, numbers, and hyphens only',
+              },
+            })}
             {renderInput('username', 'com_auth_username', 'text', {
+              required: 'Username is required',
               minLength: {
                 value: 2,
                 message: localize('com_auth_username_min_length'),

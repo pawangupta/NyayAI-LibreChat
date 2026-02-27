@@ -22,6 +22,7 @@ const {
 } = require('~/models');
 const { registerSchema } = require('~/strategies/validators');
 const { getAppConfig } = require('~/server/services/Config');
+const { resolveCompanyIdentity } = require('~/server/utils/company');
 const { sendEmail } = require('~/server/utils');
 
 const domains = {
@@ -159,7 +160,7 @@ const verifyEmail = async (req) => {
 
 /**
  * Register a new user.
- * @param {IUser} user <email, password, name, username>
+ * @param {IUser} user <email, password, name, username, company_name>
  * @param {Partial<IUser>} [additionalData={}]
  * @returns {Promise<{status: number, message: string, user?: IUser}>}
  */
@@ -176,7 +177,7 @@ const registerUser = async (user, additionalData = {}) => {
     return { status: 404, message: errorMessage };
   }
 
-  const { email, password, name, username } = user;
+  const { email, password, name, username, company_name } = user;
 
   let newUserId;
   try {
@@ -202,6 +203,23 @@ const registerUser = async (user, additionalData = {}) => {
       return { status: 200, message: genericVerificationMessage };
     }
 
+    const companyIdentity = resolveCompanyIdentity(company_name);
+
+    const existingUsernameInCompany = await findUser(
+      {
+        company_slug: companyIdentity.company_slug,
+        username: username?.trim().toLowerCase(),
+      },
+      '_id username company_slug',
+    );
+
+    if (existingUsernameInCompany) {
+      return {
+        status: 409,
+        message: 'Username is already taken for this company',
+      };
+    }
+
     //determine if this is the first registered user (not counting anonymous_user)
     const isFirstRegisteredUser = (await countUsers()) === 0;
 
@@ -209,8 +227,10 @@ const registerUser = async (user, additionalData = {}) => {
     const newUserData = {
       provider: 'local',
       email,
-      username,
+      username: username?.trim().toLowerCase(),
       name,
+      company_name: companyIdentity.company_name,
+      company_slug: companyIdentity.company_slug,
       avatar: null,
       role: isFirstRegisteredUser ? SystemRoles.ADMIN : SystemRoles.USER,
       password: bcrypt.hashSync(password, salt),

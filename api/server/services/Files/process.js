@@ -379,7 +379,7 @@ const processFileURL = async ({ fileStrategy, userId, URL, fileName, basePath, c
       type = '',
       dimensions = {},
     } = (await saveURL({ userId, URL, fileName, basePath })) || {};
-    const filepath = await getFileURL({ fileName: `${userId}/${fileName}`, basePath });
+    const filepath = await getFileURL({ userId, fileName, basePath });
     return await createFile(
       {
         user: userId,

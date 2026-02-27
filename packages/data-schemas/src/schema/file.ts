@@ -10,6 +10,14 @@ const file: Schema<IMongoFile> = new Schema(
       index: true,
       required: true,
     },
+    company_slug: {
+      type: String,
+      index: true,
+    },
+    username: {
+      type: String,
+      index: true,
+    },
     conversationId: {
       type: String,
       ref: 'Conversation',

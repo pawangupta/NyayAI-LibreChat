@@ -4,6 +4,8 @@ import { CursorPaginationParams } from '~/common';
 export interface IUser extends Document {
   name?: string;
   username?: string;
+  company_name?: string;
+  company_slug?: string;
   email: string;
   emailVerified: boolean;
   password?: string;
@@ -56,6 +58,8 @@ export interface CreateUserRequest extends Partial<IUser> {
 export interface UpdateUserRequest {
   name?: string;
   username?: string;
+  company_name?: string;
+  company_slug?: string;
   email?: string;
   role?: string;
   emailVerified?: boolean;
@@ -77,6 +81,7 @@ export interface UserFilterOptions extends CursorPaginationParams {
   _id?: Types.ObjectId | string;
   // Includes email, username and name
   search?: string;
+  company_slug?: string;
   role?: string;
   emailVerified?: boolean;
   provider?: string;

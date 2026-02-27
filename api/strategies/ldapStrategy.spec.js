@@ -93,7 +93,7 @@ describe('ldapStrategy', () => {
       expect.objectContaining({
         provider: 'ldap',
         ldapId: 'uid123',
-        username: 'Alice',
+        username: 'alice',
         email: 'first@example.com',
         emailVerified: true,
         name: 'Alice Doe',
@@ -146,7 +146,7 @@ describe('ldapStrategy', () => {
         provider: 'ldap',
         ldapId: 'uid123',
         email: 'new@example.com',
-        username: 'NewFirst',
+        username: 'olduser',
         name: 'NewFirst NewLast',
       }),
     );

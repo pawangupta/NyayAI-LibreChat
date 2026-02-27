@@ -3,6 +3,7 @@ const { PermissionBits, hasPermissions, ResourceType } = require('librechat-data
 const { getEffectivePermissions } = require('~/server/services/PermissionService');
 const { getAgents } = require('~/models/Agent');
 const { getFiles } = require('~/models/File');
+const { getUserById } = require('~/models');
 
 /**
  * Checks if user has access to a file through agent permissions
@@ -89,6 +90,22 @@ const fileAccess = async (req, res, next) => {
       return res.status(404).json({
         error: 'Not Found',
         message: 'File not found',
+      });
+    }
+
+    let fileCompanySlug = file.company_slug;
+    if (!fileCompanySlug && file.user) {
+      const owner = await getUserById(file.user.toString(), 'company_slug');
+      fileCompanySlug = owner?.company_slug;
+    }
+
+    if (fileCompanySlug && req.user?.company_slug && fileCompanySlug !== req.user.company_slug) {
+      logger.warn(
+        `[fileAccess] Tenant mismatch for user ${userId}: ${req.user.company_slug} cannot access ${fileCompanySlug}`,
+      );
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Insufficient permissions to access this file',
       });
     }
 

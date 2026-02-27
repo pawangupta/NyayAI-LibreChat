@@ -1,6 +1,6 @@
 const { logger } = require('@librechat/data-schemas');
 const { EToolResources, FileContext } = require('librechat-data-provider');
-const { File } = require('~/db/models');
+const { File, User } = require('~/db/models');
 
 /**
  * Finds a file by its file_id with additional query options.
@@ -69,8 +69,20 @@ const getToolFilesByIds = async (fileIds, toolResourceSet) => {
  * @returns {Promise<MongoFile>} A promise that resolves to the created file document.
  */
 const createFile = async (data, disableTTL) => {
+  const tenantData = {};
+  if (data?.user && (!data?.company_slug || !data?.username)) {
+    const owner = await User.findById(data.user).select('company_slug username').lean();
+    if (owner?.company_slug && !data?.company_slug) {
+      tenantData.company_slug = owner.company_slug;
+    }
+    if (owner?.username && !data?.username) {
+      tenantData.username = owner.username;
+    }
+  }
+
   const fileData = {
     ...data,
+    ...tenantData,
     expiresAt: new Date(Date.now() + 3600 * 1000),
   };
 

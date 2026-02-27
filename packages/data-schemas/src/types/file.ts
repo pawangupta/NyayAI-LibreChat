@@ -2,6 +2,8 @@ import { Document, Types } from 'mongoose';
 
 export interface IMongoFile extends Omit<Document, 'model'> {
   user: Types.ObjectId;
+  company_slug?: string;
+  username?: string;
   conversationId?: string;
   file_id: string;
   temp_file_id?: string;

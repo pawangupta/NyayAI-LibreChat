@@ -2,6 +2,12 @@
 const { errorsToString } = require('librechat-data-provider');
 const { loginSchema, registerSchema } = require('./validators');
 
+const parseRegister = (input) =>
+  registerSchema.safeParse({
+    company_name: 'vk-law',
+    ...input,
+  });
+
 describe('Zod Schemas', () => {
   describe('loginSchema', () => {
     it('should validate a correct login object', () => {
@@ -77,7 +83,7 @@ describe('Zod Schemas', () => {
 
   describe('registerSchema', () => {
     it('should validate a correct register object', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@example.com',
@@ -88,19 +94,19 @@ describe('Zod Schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow the username to be omitted', () => {
-      const result = registerSchema.safeParse({
+    it('should reject registration when username is omitted', () => {
+      const result = parseRegister({
         name: 'John Doe',
         email: 'john@example.com',
         password: 'password123',
         confirm_password: 'password123',
       });
 
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
     it('should invalidate a short name', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'Jo',
         username: 'john_doe',
         email: 'john@example.com',
@@ -111,8 +117,8 @@ describe('Zod Schemas', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should handle empty username by transforming to null', () => {
-      const result = registerSchema.safeParse({
+    it('should reject an empty username', () => {
+      const result = parseRegister({
         name: 'John Doe',
         username: '',
         email: 'john@example.com',
@@ -120,14 +126,13 @@ describe('Zod Schemas', () => {
         confirm_password: 'password123',
       });
 
-      expect(result.success).toBe(true);
-      expect(result.data.username).toBe(null);
+      expect(result.success).toBe(false);
     });
 
     it('should handle name with special characters', () => {
       const names = ['Jöhn Dœ', 'John <Doe>'];
       names.forEach((name) => {
-        const result = registerSchema.safeParse({
+        const result = parseRegister({
           name,
           username: 'john_doe',
           email: 'john@example.com',
@@ -141,7 +146,7 @@ describe('Zod Schemas', () => {
     it('should handle username with special characters', () => {
       const usernames = ['john.doe@', 'john..doe'];
       usernames.forEach((username) => {
-        const result = registerSchema.safeParse({
+        const result = parseRegister({
           name: 'John Doe',
           username,
           email: 'john@example.com',
@@ -153,7 +158,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should invalidate mismatched password and confirm_password', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@example.com',
@@ -164,7 +169,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle email without a TLD', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@domain',
@@ -175,7 +180,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle email with multiple @ symbols', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@domain@com',
@@ -186,7 +191,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle name that is too long', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'a'.repeat(81),
         username: 'john_doe',
         email: 'john@example.com',
@@ -197,7 +202,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle username that is too long', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'a'.repeat(81),
         email: 'john@example.com',
@@ -208,7 +213,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle password or confirm_password that is too long', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@example.com',
@@ -219,7 +224,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle password or confirm_password that is just spaces', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@example.com',
@@ -230,7 +235,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle null values for fields', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: null,
         username: null,
         email: null,
@@ -241,7 +246,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle undefined values for fields', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: undefined,
         username: undefined,
         email: undefined,
@@ -252,7 +257,7 @@ describe('Zod Schemas', () => {
     });
 
     it('should handle extra fields not defined in the schema', () => {
-      const result = registerSchema.safeParse({
+      const result = parseRegister({
         name: 'John Doe',
         username: 'john_doe',
         email: 'john@example.com',
@@ -381,7 +386,7 @@ describe('Zod Schemas', () => {
       ];
 
       const failingUsernames = usernames.reduce((acc, username) => {
-        const result = registerSchema.safeParse({
+        const result = parseRegister({
           name: 'John Doe',
           username,
           email: 'john@example.com',
@@ -416,7 +421,7 @@ describe('Zod Schemas', () => {
 
       const passingUsernames = [];
       const failingUsernames = invalidUsernames.reduce((acc, username) => {
-        const result = registerSchema.safeParse({
+        const result = parseRegister({
           name: 'John Doe',
           username,
           email: 'john@example.com',
@@ -441,7 +446,7 @@ describe('Zod Schemas', () => {
 
   describe('errorsToString', () => {
     it('should convert errors to string', () => {
-      const { error } = registerSchema.safeParse({
+      const { error } = parseRegister({
         name: 'Jo',
         username: 'john_doe',
         email: 'john@example.com',
@@ -479,8 +484,9 @@ describe('Zod Schemas', () => {
 
     it('should respect the configured minimum password length for registration', () => {
       // Test password exactly at minimum length
-      const resultValid = registerSchema.safeParse({
+      const resultValid = parseRegister({
         name: 'John Doe',
+        username: 'john_doe',
         email: 'john@example.com',
         password: 'a'.repeat(minLength),
         confirm_password: 'a'.repeat(minLength),
@@ -489,8 +495,9 @@ describe('Zod Schemas', () => {
 
       // Test password one character below minimum
       if (minLength > 1) {
-        const resultInvalid = registerSchema.safeParse({
+        const resultInvalid = parseRegister({
           name: 'John Doe',
+          username: 'john_doe',
           email: 'john@example.com',
           password: 'a'.repeat(minLength - 1),
           confirm_password: 'a'.repeat(minLength - 1),

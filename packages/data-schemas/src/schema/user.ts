@@ -33,6 +33,19 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       default: '',
     },
+    company_name: {
+      type: String,
+      trim: true,
+      default: 'default',
+    },
+    company_slug: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      match: [/^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/, 'is invalid'],
+      index: true,
+      default: 'default',
+    },
     email: {
       type: String,
       required: [true, "can't be blank"],

@@ -3,6 +3,8 @@ const fetch = require('node-fetch');
 const { initializeS3 } = require('@librechat/api');
 const { logger } = require('@librechat/data-schemas');
 const { FileSources } = require('librechat-data-provider');
+const { getUserById } = require('~/models');
+const { getCompanyBucketName, resolveCompanyIdentity } = require('~/server/utils/company');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const {
   PutObjectCommand,
@@ -11,7 +13,6 @@ const {
   DeleteObjectCommand,
 } = require('@aws-sdk/client-s3');
 
-const bucketName = process.env.AWS_BUCKET_NAME;
 const defaultBasePath = 'images';
 
 let s3UrlExpirySeconds = 2 * 60; // 2 minutes
@@ -42,29 +43,124 @@ if (process.env.S3_REFRESH_EXPIRY_MS !== null && process.env.S3_REFRESH_EXPIRY_M
   }
 }
 
-/**
- * Constructs the S3 key based on the base path, user ID, and file name.
- */
-const getS3Key = (basePath, userId, fileName) => `${basePath}/${userId}/${fileName}`;
+const BUCKET_HOST_REGEX = /^([^.]*)\.s3[.-].*amazonaws\.com$/i;
+
+const getS3Key = (basePath, username, fileName) => {
+  const sanitizedBasePath = String(basePath || defaultBasePath).replace(/^\/+|\/+$/g, '');
+  return `${username}/uploaded_files/${sanitizedBasePath}/${fileName}`;
+};
+
+async function resolveS3Context({ userId, username, companySlug, bucketName }) {
+  if (bucketName && username) {
+    return { bucketName, username, companySlug: companySlug || null };
+  }
+
+  if (userId) {
+    const user = await getUserById(String(userId), 'username company_slug');
+    const safeUsername = user?.username || `user-${String(userId).slice(-8)}`;
+    const safeCompanySlug = user?.company_slug || resolveCompanyIdentity(null).company_slug;
+    return {
+      bucketName: getCompanyBucketName(safeCompanySlug),
+      username: safeUsername,
+      companySlug: safeCompanySlug,
+    };
+  }
+
+  if (companySlug && username) {
+    return {
+      bucketName: getCompanyBucketName(companySlug),
+      username,
+      companySlug,
+    };
+  }
+
+  throw new Error('Insufficient S3 context: expected userId or companySlug+username');
+}
+
+function extractBucketAndKeyFromUrl(fileUrlOrKey) {
+  if (!fileUrlOrKey) {
+    throw new Error('Invalid input: URL or key is empty');
+  }
+
+  try {
+    const parsed = new URL(fileUrlOrKey);
+    const key = parsed.pathname.replace(/^\//, '');
+    const host = parsed.hostname;
+
+    let bucketName = '';
+    const bucketMatch = host.match(BUCKET_HOST_REGEX);
+    if (bucketMatch?.[1]) {
+      bucketName = bucketMatch[1];
+    } else {
+      const [firstPath, ...restPath] = key.split('/');
+      if (firstPath?.startsWith('nyayai-cust-') && restPath.length > 0) {
+        bucketName = firstPath;
+        return { bucketName, key: restPath.join('/') };
+      }
+    }
+
+    return { bucketName, key };
+  } catch {
+    return {
+      bucketName: '',
+      key: fileUrlOrKey.startsWith('/') ? fileUrlOrKey.slice(1) : fileUrlOrKey,
+    };
+  }
+}
+
+function parseS3Key(key) {
+  const parts = String(key || '').split('/');
+  if (parts.length < 4) {
+    return null;
+  }
+  const [username, rootFolder, basePath, ...fileParts] = parts;
+  if (rootFolder !== 'uploaded_files') {
+    return null;
+  }
+  return {
+    username,
+    basePath,
+    fileName: fileParts.join('/'),
+  };
+}
 
 /**
  * Uploads a buffer to S3 and returns a signed URL.
  *
  * @param {Object} params
- * @param {string} params.userId - The user's unique identifier.
+ * @param {string} [params.userId] - The user's unique identifier.
+ * @param {string} [params.username] - The tenant username.
+ * @param {string} [params.companySlug] - The tenant company slug.
+ * @param {string} [params.bucketName] - Optional explicit bucket name.
  * @param {Buffer} params.buffer - The buffer containing file data.
  * @param {string} params.fileName - The file name to use in S3.
  * @param {string} [params.basePath='images'] - The base path in the bucket.
  * @returns {Promise<string>} Signed URL of the uploaded file.
  */
-async function saveBufferToS3({ userId, buffer, fileName, basePath = defaultBasePath }) {
-  const key = getS3Key(basePath, userId, fileName);
-  const params = { Bucket: bucketName, Key: key, Body: buffer };
+async function saveBufferToS3({
+  userId,
+  username,
+  companySlug,
+  bucketName,
+  buffer,
+  fileName,
+  basePath = defaultBasePath,
+}) {
+  const context = await resolveS3Context({ userId, username, companySlug, bucketName });
+  const key = getS3Key(basePath, context.username, fileName);
+  const params = { Bucket: context.bucketName, Key: key, Body: buffer };
 
   try {
     const s3 = initializeS3();
     await s3.send(new PutObjectCommand(params));
-    return await getS3URL({ userId, fileName, basePath });
+    return await getS3URL({
+      userId,
+      username: context.username,
+      companySlug: context.companySlug,
+      bucketName: context.bucketName,
+      fileName,
+      basePath,
+    });
   } catch (error) {
     logger.error('[saveBufferToS3] Error uploading buffer to S3:', error.message);
     throw error;
@@ -76,7 +172,10 @@ async function saveBufferToS3({ userId, buffer, fileName, basePath = defaultBase
  * Returns a signed URL with expiration time or a proxy URL based on config
  *
  * @param {Object} params
- * @param {string} params.userId - The user's unique identifier.
+ * @param {string} [params.userId] - The user's unique identifier.
+ * @param {string} [params.username] - The tenant username.
+ * @param {string} [params.companySlug] - The tenant company slug.
+ * @param {string} [params.bucketName] - Optional explicit bucket name.
  * @param {string} params.fileName - The file name in S3.
  * @param {string} [params.basePath='images'] - The base path in the bucket.
  * @param {string} [params.customFilename] - Custom filename for Content-Disposition header (overrides extracted filename).
@@ -85,13 +184,17 @@ async function saveBufferToS3({ userId, buffer, fileName, basePath = defaultBase
  */
 async function getS3URL({
   userId,
+  username,
+  companySlug,
+  bucketName,
   fileName,
   basePath = defaultBasePath,
   customFilename = null,
   contentType = null,
 }) {
-  const key = getS3Key(basePath, userId, fileName);
-  const params = { Bucket: bucketName, Key: key };
+  const context = await resolveS3Context({ userId, username, companySlug, bucketName });
+  const key = getS3Key(basePath, context.username, fileName);
+  const params = { Bucket: context.bucketName, Key: key };
 
   // Add response headers if specified
   if (customFilename) {
@@ -115,18 +218,37 @@ async function getS3URL({
  * Saves a file from a given URL to S3.
  *
  * @param {Object} params
- * @param {string} params.userId - The user's unique identifier.
+ * @param {string} [params.userId] - The user's unique identifier.
+ * @param {string} [params.username] - The tenant username.
+ * @param {string} [params.companySlug] - The tenant company slug.
+ * @param {string} [params.bucketName] - Optional explicit bucket name.
  * @param {string} params.URL - The source URL of the file.
  * @param {string} params.fileName - The file name to use in S3.
  * @param {string} [params.basePath='images'] - The base path in the bucket.
  * @returns {Promise<string>} Signed URL of the uploaded file.
  */
-async function saveURLToS3({ userId, URL, fileName, basePath = defaultBasePath }) {
+async function saveURLToS3({
+  userId,
+  username,
+  companySlug,
+  bucketName,
+  URL,
+  fileName,
+  basePath = defaultBasePath,
+}) {
   try {
     const response = await fetch(URL);
     const buffer = await response.buffer();
     // Optionally you can call getBufferMetadata(buffer) if needed.
-    return await saveBufferToS3({ userId, buffer, fileName, basePath });
+    return await saveBufferToS3({
+      userId,
+      username,
+      companySlug,
+      bucketName,
+      buffer,
+      fileName,
+      basePath,
+    });
   } catch (error) {
     logger.error('[saveURLToS3] Error uploading file from URL to S3:', error.message);
     throw error;
@@ -142,10 +264,15 @@ async function saveURLToS3({ userId, URL, fileName, basePath = defaultBasePath }
  * @returns {Promise<void>}
  */
 async function deleteFileFromS3(req, file) {
+  const context = await resolveS3Context({
+    userId: req.user.id,
+    username: req.user.username,
+    companySlug: req.user.company_slug,
+  });
   const key = extractKeyFromS3Url(file.filepath);
-  const params = { Bucket: bucketName, Key: key };
-  if (!key.includes(req.user.id)) {
-    const message = `[deleteFileFromS3] User ID mismatch: ${req.user.id} vs ${key}`;
+  const params = { Bucket: context.bucketName, Key: key };
+  if (!key.startsWith(`${context.username}/uploaded_files/`)) {
+    const message = `[deleteFileFromS3] Username key mismatch: ${context.username} vs ${key}`;
     logger.error(message);
     throw new Error(message);
   }
@@ -203,9 +330,13 @@ async function deleteFileFromS3(req, file) {
 async function uploadFileToS3({ req, file, file_id, basePath = defaultBasePath }) {
   try {
     const inputFilePath = file.path;
-    const userId = req.user.id;
+    const context = await resolveS3Context({
+      userId: req.user.id,
+      username: req.user.username,
+      companySlug: req.user.company_slug,
+    });
     const fileName = `${file_id}__${file.originalname}`;
-    const key = getS3Key(basePath, userId, fileName);
+    const key = getS3Key(basePath, context.username, fileName);
 
     const stats = await fs.promises.stat(inputFilePath);
     const bytes = stats.size;
@@ -213,13 +344,20 @@ async function uploadFileToS3({ req, file, file_id, basePath = defaultBasePath }
 
     const s3 = initializeS3();
     const uploadParams = {
-      Bucket: bucketName,
+      Bucket: context.bucketName,
       Key: key,
       Body: fileStream,
     };
 
     await s3.send(new PutObjectCommand(uploadParams));
-    const fileURL = await getS3URL({ userId, fileName, basePath });
+    const fileURL = await getS3URL({
+      userId: req.user.id,
+      username: context.username,
+      companySlug: context.companySlug,
+      bucketName: context.bucketName,
+      fileName,
+      basePath,
+    });
     return { filepath: fileURL, bytes };
   } catch (error) {
     logger.error('[uploadFileToS3] Error streaming file to S3:', error);
@@ -244,22 +382,7 @@ async function uploadFileToS3({ req, file, file_id, basePath = defaultBasePath }
  * @returns {string} The S3 key
  */
 function extractKeyFromS3Url(fileUrlOrKey) {
-  if (!fileUrlOrKey) {
-    throw new Error('Invalid input: URL or key is empty');
-  }
-
-  try {
-    const url = new URL(fileUrlOrKey);
-    return url.pathname.substring(1);
-  } catch (error) {
-    const parts = fileUrlOrKey.split('/');
-
-    if (parts.length >= 3 && !fileUrlOrKey.startsWith('http') && !fileUrlOrKey.startsWith('/')) {
-      return fileUrlOrKey;
-    }
-
-    return fileUrlOrKey.startsWith('/') ? fileUrlOrKey.substring(1) : fileUrlOrKey;
-  }
+  return extractBucketAndKeyFromUrl(fileUrlOrKey).key;
 }
 
 /**
@@ -269,10 +392,19 @@ function extractKeyFromS3Url(fileUrlOrKey) {
  * @param {string} filePath - The S3 key of the file.
  * @returns {Promise<NodeJS.ReadableStream>}
  */
-async function getS3FileStream(_req, filePath) {
+async function getS3FileStream(req, filePath) {
   try {
-    const Key = extractKeyFromS3Url(filePath);
-    const params = { Bucket: bucketName, Key };
+    const extracted = extractBucketAndKeyFromUrl(filePath);
+    let resolvedBucket = extracted.bucketName;
+    if (!resolvedBucket) {
+      const context = await resolveS3Context({
+        userId: req?.user?.id,
+        username: req?.user?.username,
+        companySlug: req?.user?.company_slug,
+      });
+      resolvedBucket = context.bucketName;
+    }
+    const params = { Bucket: resolvedBucket, Key: extracted.key };
     const s3 = initializeS3();
     const data = await s3.send(new GetObjectCommand(params));
     return data.Body; // Returns a Node.js ReadableStream.
@@ -348,23 +480,21 @@ function needsRefresh(signedUrl, bufferSeconds) {
  */
 async function getNewS3URL(currentURL) {
   try {
-    const s3Key = extractKeyFromS3Url(currentURL);
-    if (!s3Key) {
-      return;
-    }
-    const keyParts = s3Key.split('/');
-    if (keyParts.length < 3) {
+    const { bucketName, key } = extractBucketAndKeyFromUrl(currentURL);
+    if (!key) {
       return;
     }
 
-    const basePath = keyParts[0];
-    const userId = keyParts[1];
-    const fileName = keyParts.slice(2).join('/');
+    const parsed = parseS3Key(key);
+    if (!parsed) {
+      return;
+    }
 
     return await getS3URL({
-      userId,
-      fileName,
-      basePath,
+      bucketName,
+      username: parsed.username,
+      fileName: parsed.fileName,
+      basePath: parsed.basePath,
     });
   } catch (error) {
     logger.error('Error getting new S3 URL:', error);
@@ -439,29 +569,26 @@ async function refreshS3Url(fileObj, bufferSeconds = 3600) {
   }
 
   try {
-    const s3Key = extractKeyFromS3Url(fileObj.filepath);
-    if (!s3Key) {
+    const { bucketName, key } = extractBucketAndKeyFromUrl(fileObj.filepath);
+    if (!key) {
       logger.warn(`Unable to extract S3 key from URL: ${fileObj.filepath}`);
       return fileObj.filepath;
     }
 
-    const keyParts = s3Key.split('/');
-    if (keyParts.length < 3) {
-      logger.warn(`Invalid S3 key format: ${s3Key}`);
+    const parsed = parseS3Key(key);
+    if (!parsed) {
+      logger.warn(`Invalid S3 key format: ${key}`);
       return fileObj.filepath;
     }
 
-    const basePath = keyParts[0];
-    const userId = keyParts[1];
-    const fileName = keyParts.slice(2).join('/');
-
     const newUrl = await getS3URL({
-      userId,
-      fileName,
-      basePath,
+      bucketName,
+      username: parsed.username,
+      fileName: parsed.fileName,
+      basePath: parsed.basePath,
     });
 
-    logger.debug(`Refreshed S3 URL for key: ${s3Key}`);
+    logger.debug(`Refreshed S3 URL for key: ${key}`);
     return newUrl;
   } catch (error) {
     logger.error(`Error refreshing S3 URL: ${error.message}`);

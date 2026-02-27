@@ -162,6 +162,8 @@ export function createUserMethods(mongoose: typeof import('mongoose')) {
       payload: {
         id: user._id,
         username: user.username,
+        company_name: user.company_name,
+        company_slug: user.company_slug,
         provider: user.provider,
         email: user.email,
       },

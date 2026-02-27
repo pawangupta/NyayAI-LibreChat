@@ -5,6 +5,29 @@ const { SystemRoles, ErrorTypes } = require('librechat-data-provider');
 const { isEnabled, getBalanceConfig, isEmailDomainAllowed } = require('@librechat/api');
 const { createUser, findUser, updateUser, countUsers } = require('~/models');
 const { getAppConfig } = require('~/server/services/Config');
+const { resolveCompanyIdentity } = require('~/server/utils/company');
+
+const resolveUniqueTenantUsername = async (companySlug, username) => {
+  const base = String(username || 'user')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9_.-]/g, '')
+    .slice(0, 70) || 'user';
+
+  let candidate = base;
+  let suffix = 1;
+  while (suffix < 1000) {
+    const existing = await findUser({ company_slug: companySlug, username: candidate }, '_id');
+    if (!existing) {
+      return candidate;
+    }
+    suffix += 1;
+    candidate = `${base}-${suffix}`.slice(0, 79);
+  }
+
+  return `${base}-${Date.now().toString().slice(-6)}`.slice(0, 79);
+};
 
 const {
   LDAP_URL,
@@ -131,13 +154,17 @@ const ldapLogin = new LdapStrategy(ldapOptions, async (userinfo, done) => {
     }
 
     if (!user) {
+      const companyIdentity = resolveCompanyIdentity(process.env.DEFAULT_COMPANY_NAME);
+      const tenantUsername = await resolveUniqueTenantUsername(companyIdentity.company_slug, username);
       const isFirstRegisteredUser = (await countUsers()) === 0;
       const role = isFirstRegisteredUser ? SystemRoles.ADMIN : SystemRoles.USER;
 
       user = {
         provider: 'ldap',
         ldapId,
-        username,
+        username: tenantUsername,
+        company_name: companyIdentity.company_name,
+        company_slug: companyIdentity.company_slug,
         email: mail,
         emailVerified: true, // The ldap server administrator should verify the email
         name: fullName,
@@ -152,7 +179,12 @@ const ldapLogin = new LdapStrategy(ldapOptions, async (userinfo, done) => {
       user.provider = 'ldap';
       user.ldapId = ldapId;
       user.email = mail;
-      user.username = username;
+      user.username = user.username || username;
+      if (!user.company_name || !user.company_slug) {
+        const companyIdentity = resolveCompanyIdentity(process.env.DEFAULT_COMPANY_NAME);
+        user.company_name = companyIdentity.company_name;
+        user.company_slug = companyIdentity.company_slug;
+      }
       user.name = fullName;
     }
 

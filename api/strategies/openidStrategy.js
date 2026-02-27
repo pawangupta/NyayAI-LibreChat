@@ -19,6 +19,7 @@ const {
 const { getStrategyFunctions } = require('~/server/services/Files/strategies');
 const { findUser, createUser, updateUser } = require('~/models');
 const { getAppConfig } = require('~/server/services/Config');
+const { resolveCompanyIdentity } = require('~/server/utils/company');
 const getLogStores = require('~/cache/getLogStores');
 
 /**
@@ -282,6 +283,28 @@ function convertToUsername(input, defaultValue = '') {
   return defaultValue;
 }
 
+async function resolveUniqueTenantUsername(companySlug, username) {
+  const base = String(username || 'user')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9_.-]/g, '')
+    .slice(0, 70) || 'user';
+
+  let candidate = base;
+  let suffix = 1;
+  while (suffix < 1000) {
+    const existing = await findUser({ company_slug: companySlug, username: candidate }, '_id');
+    if (!existing) {
+      return candidate;
+    }
+    suffix += 1;
+    candidate = `${base}-${suffix}`.slice(0, 79);
+  }
+
+  return `${base}-${Date.now().toString().slice(-6)}`.slice(0, 79);
+}
+
 /**
  * Sets up the OpenID strategy for authentication.
  * This function configures the OpenID client, handles proxy settings,
@@ -430,11 +453,21 @@ async function setupOpenId() {
             );
           }
 
+          const companyIdentity = resolveCompanyIdentity(
+            userinfo.company_name || userinfo.company || process.env.DEFAULT_COMPANY_NAME,
+          );
+
           if (!user) {
+            const tenantUsername = await resolveUniqueTenantUsername(
+              companyIdentity.company_slug,
+              username,
+            );
             user = {
               provider: 'openid',
               openidId: userinfo.sub,
-              username,
+              username: tenantUsername,
+              company_name: companyIdentity.company_name,
+              company_slug: companyIdentity.company_slug,
               email: email || '',
               emailVerified: userinfo.email_verified || false,
               name: fullName,
@@ -446,7 +479,9 @@ async function setupOpenId() {
           } else {
             user.provider = 'openid';
             user.openidId = userinfo.sub;
-            user.username = username;
+            user.username = user.username || username;
+            user.company_name = user.company_name || companyIdentity.company_name;
+            user.company_slug = user.company_slug || companyIdentity.company_slug;
             user.name = fullName;
             user.idOnTheSource = userinfo.oid;
             if (email && email !== user.email) {
@@ -523,6 +558,8 @@ async function setupOpenId() {
               const imagePath = await saveBuffer({
                 fileName,
                 userId: user._id.toString(),
+                username: user.username,
+                companySlug: user.company_slug,
                 buffer: imageBuffer,
               });
               user.avatar = imagePath ?? '';

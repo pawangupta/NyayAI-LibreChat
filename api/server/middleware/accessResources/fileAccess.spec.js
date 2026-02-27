@@ -61,7 +61,11 @@ describe('fileAccess middleware', () => {
 
     // Setup request/response objects
     req = {
-      user: { id: testUser._id.toString(), role: testUser.role },
+      user: {
+        id: testUser._id.toString(),
+        role: testUser.role,
+        company_slug: testUser.company_slug,
+      },
       params: {},
     };
     res = {
@@ -106,6 +110,30 @@ describe('fileAccess middleware', () => {
       });
 
       req.params.file_id = 'file_owned_by_other';
+      await fileAccess(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Forbidden',
+        message: 'Insufficient permissions to access this file',
+      });
+    });
+
+    test('should deny access for cross-company file even with known file id', async () => {
+      await createFile({
+        user: otherUser._id.toString(),
+        company_slug: 'some-other-company',
+        username: 'otheruser',
+        file_id: 'cross_company_file',
+        filepath: '/test/cross.txt',
+        filename: 'cross.txt',
+        type: 'text/plain',
+        bytes: 100,
+      });
+
+      req.params.file_id = 'cross_company_file';
+      req.user.company_slug = 'default';
       await fileAccess(req, res, next);
 
       expect(next).not.toHaveBeenCalled();

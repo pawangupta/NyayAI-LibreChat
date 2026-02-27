@@ -38,30 +38,42 @@ describe('handleExistingUser', () => {
   it('should handle null avatar without throwing error', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: null,
     };
     const avatarUrl = 'https://example.com/avatar.png';
 
     await handleExistingUser(oldUser, avatarUrl);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: avatarUrl });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: avatarUrl }),
+    );
   });
 
   it('should handle undefined avatar without throwing error', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       // avatar is undefined
     };
     const avatarUrl = 'https://example.com/avatar.png';
 
     await handleExistingUser(oldUser, avatarUrl);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: avatarUrl });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: avatarUrl }),
+    );
   });
 
   it('should not update avatar if it has manual=true flag', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: 'https://example.com/avatar.png?manual=true',
     };
     const avatarUrl = 'https://example.com/new-avatar.png';
@@ -74,13 +86,18 @@ describe('handleExistingUser', () => {
   it('should update avatar for local storage when avatar has no manual flag', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: 'https://example.com/old-avatar.png',
     };
     const avatarUrl = 'https://example.com/new-avatar.png';
 
     await handleExistingUser(oldUser, avatarUrl);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: avatarUrl });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: avatarUrl }),
+    );
   });
 
   it('should process avatar for non-local storage', async () => {
@@ -92,6 +109,8 @@ describe('handleExistingUser', () => {
 
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: null,
     };
     const avatarUrl = 'https://example.com/avatar.png';
@@ -105,9 +124,14 @@ describe('handleExistingUser', () => {
     expect(mockProcessAvatar).toHaveBeenCalledWith({
       buffer: Buffer.from('resized-image'),
       userId: 'user123',
+      username: undefined,
+      companySlug: 'default',
       manual: 'false',
     });
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: 'processed-avatar-url' });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: 'processed-avatar-url' }),
+    );
   });
 
   it('should not update if avatar already has manual flag in non-local storage', async () => {
@@ -115,6 +139,8 @@ describe('handleExistingUser', () => {
 
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: 'https://cdn.example.com/avatar.png?manual=true',
     };
     const avatarUrl = 'https://example.com/new-avatar.png';
@@ -128,37 +154,52 @@ describe('handleExistingUser', () => {
   it('should handle avatar with query parameters but without manual flag', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: 'https://example.com/avatar.png?size=large&format=webp',
     };
     const avatarUrl = 'https://example.com/new-avatar.png';
 
     await handleExistingUser(oldUser, avatarUrl);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: avatarUrl });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: avatarUrl }),
+    );
   });
 
   it('should handle empty string avatar', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: '',
     };
     const avatarUrl = 'https://example.com/avatar.png';
 
     await handleExistingUser(oldUser, avatarUrl);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: avatarUrl });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: avatarUrl }),
+    );
   });
 
   it('should handle avatar with manual=false parameter', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       avatar: 'https://example.com/avatar.png?manual=false',
     };
     const avatarUrl = 'https://example.com/new-avatar.png';
 
     await handleExistingUser(oldUser, avatarUrl);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { avatar: avatarUrl });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ avatar: avatarUrl }),
+    );
   });
 
   it('should handle oldUser being null gracefully', async () => {
@@ -171,6 +212,8 @@ describe('handleExistingUser', () => {
   it('should update email when it has changed', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       email: 'old@example.com',
       avatar: 'https://example.com/avatar.png?manual=true',
     };
@@ -179,12 +222,17 @@ describe('handleExistingUser', () => {
 
     await handleExistingUser(oldUser, avatarUrl, {}, newEmail);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { email: 'new@example.com' });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ email: 'new@example.com' }),
+    );
   });
 
   it('should update both avatar and email when both have changed', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       email: 'old@example.com',
       avatar: null,
     };
@@ -193,15 +241,20 @@ describe('handleExistingUser', () => {
 
     await handleExistingUser(oldUser, avatarUrl, {}, newEmail);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', {
-      avatar: avatarUrl,
-      email: 'new@example.com',
-    });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({
+        avatar: avatarUrl,
+        email: 'new@example.com',
+      }),
+    );
   });
 
   it('should not update email when it has not changed', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       email: 'same@example.com',
       avatar: 'https://example.com/avatar.png?manual=true',
     };
@@ -216,6 +269,8 @@ describe('handleExistingUser', () => {
   it('should trim email before comparison and update', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       email: 'test@example.com',
       avatar: 'https://example.com/avatar.png?manual=true',
     };
@@ -224,12 +279,17 @@ describe('handleExistingUser', () => {
 
     await handleExistingUser(oldUser, avatarUrl, {}, newEmailWithSpaces);
 
-    expect(updateUser).toHaveBeenCalledWith('user123', { email: 'newemail@example.com' });
+    expect(updateUser).toHaveBeenCalledWith(
+      'user123',
+      expect.objectContaining({ email: 'newemail@example.com' }),
+    );
   });
 
   it('should not update when email parameter is not provided', async () => {
     const oldUser = {
       _id: 'user123',
+      company_name: 'default',
+      company_slug: 'default',
       email: 'test@example.com',
       avatar: 'https://example.com/avatar.png?manual=true',
     };

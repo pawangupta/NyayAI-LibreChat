@@ -210,7 +210,7 @@ describe('setupOpenId', () => {
     const userinfo = { ...tokenset.claims() };
     delete userinfo.username;
     delete userinfo.preferred_username;
-    const expectUsername = userinfo.email;
+    const expectUsername = 'testexample.com';
 
     // Act
     const { user } = await validate({ ...tokenset, claims: () => userinfo });

@@ -39,6 +39,8 @@ async function uploadImageToS3({
     } = await resizeImageBuffer(inputBuffer, resolution, endpoint);
     const extension = path.extname(inputFilePath);
     const userId = req.user.id;
+    const username = req.user.username;
+    const companySlug = req.user.company_slug;
 
     let processedBuffer;
     let fileName = `${file_id}__${path.basename(inputFilePath)}`;
@@ -56,6 +58,8 @@ async function uploadImageToS3({
 
     const downloadURL = await saveBufferToS3({
       userId,
+      username,
+      companySlug,
       buffer: processedBuffer,
       fileName,
       basePath,
@@ -92,12 +96,22 @@ async function prepareImageURLS3(req, file) {
  * @param {Object} params
  * @param {Buffer} params.buffer - Avatar image buffer.
  * @param {string} params.userId - User's unique identifier.
+ * @param {string} [params.username] - Tenant username.
+ * @param {string} [params.companySlug] - Tenant company slug.
  * @param {string} params.manual - 'true' or 'false' flag for manual update.
  * @param {string} [params.agentId] - Optional agent ID if this is an agent avatar.
  * @param {string} [params.basePath='images'] - Base path in the bucket.
  * @returns {Promise<string>} Signed URL of the uploaded avatar.
  */
-async function processS3Avatar({ buffer, userId, manual, agentId, basePath = defaultBasePath }) {
+async function processS3Avatar({
+  buffer,
+  userId,
+  username,
+  companySlug,
+  manual,
+  agentId,
+  basePath = defaultBasePath,
+}) {
   try {
     const metadata = await sharp(buffer).metadata();
     const extension = metadata.format === 'gif' ? 'gif' : 'png';
@@ -108,7 +122,14 @@ async function processS3Avatar({ buffer, userId, manual, agentId, basePath = def
       ? `agent-${agentId}-avatar-${timestamp}.${extension}`
       : `avatar-${timestamp}.${extension}`;
 
-    const downloadURL = await saveBufferToS3({ userId, buffer, fileName, basePath });
+    const downloadURL = await saveBufferToS3({
+      userId,
+      username,
+      companySlug,
+      buffer,
+      fileName,
+      basePath,
+    });
 
     // Only update user record if this is a user avatar (manual === 'true')
     if (manual === 'true' && !agentId) {

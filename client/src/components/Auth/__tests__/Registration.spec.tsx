@@ -120,7 +120,8 @@ jest.mock('react-router-dom', () => ({
 test('renders registration form', () => {
   const { getByText, getByTestId, getByRole } = setup();
   expect(getByText(/Create your account/i)).toBeInTheDocument();
-  expect(getByRole('textbox', { name: /Full name/i })).toBeInTheDocument();
+  expect(getByTestId('name')).toBeInTheDocument();
+  expect(getByRole('textbox', { name: /Company Name/i })).toBeInTheDocument();
   expect(getByRole('form', { name: /Registration form/i })).toBeVisible();
   expect(getByRole('textbox', { name: /Username/i })).toBeInTheDocument();
   expect(getByRole('textbox', { name: /Email/i })).toBeInTheDocument();
@@ -185,18 +186,20 @@ test('renders registration form', () => {
 
 test('shows validation error messages', async () => {
   const { getByTestId, getAllByRole, getByRole } = setup();
-  await userEvent.type(getByRole('textbox', { name: /Full name/i }), 'J');
+  await userEvent.type(getByTestId('name'), 'J');
+  await userEvent.type(getByRole('textbox', { name: /Company Name/i }), 'A');
   await userEvent.type(getByRole('textbox', { name: /Username/i }), 'j');
   await userEvent.type(getByRole('textbox', { name: /Email/i }), 'test');
   await userEvent.type(getByTestId('password'), 'pass');
   await userEvent.type(getByTestId('confirm_password'), 'password1');
   const alerts = getAllByRole('alert');
-  expect(alerts).toHaveLength(5);
+  expect(alerts).toHaveLength(6);
   expect(alerts[0]).toHaveTextContent(/Name must be at least 3 characters/i);
-  expect(alerts[1]).toHaveTextContent(/Username must be at least 2 characters/i);
-  expect(alerts[2]).toHaveTextContent(/You must enter a valid email address/i);
-  expect(alerts[3]).toHaveTextContent(/Password must be at least 8 characters/i);
-  expect(alerts[4]).toHaveTextContent(/Passwords do not match/i);
+  expect(alerts[1]).toHaveTextContent(/Company name must be at least 2 characters/i);
+  expect(alerts[2]).toHaveTextContent(/Username must be at least 2 characters/i);
+  expect(alerts[3]).toHaveTextContent(/You must enter a valid email address/i);
+  expect(alerts[4]).toHaveTextContent(/Password must be at least 8 characters/i);
+  expect(alerts[5]).toHaveTextContent(/Passwords do not match/i);
 });
 
 test('shows error message when registration fails', async () => {
@@ -212,7 +215,8 @@ test('shows error message when registration fails', async () => {
     },
   });
 
-  await userEvent.type(getByRole('textbox', { name: /Full name/i }), 'John Doe');
+  await userEvent.type(getByTestId('name'), 'John Doe');
+  await userEvent.type(getByRole('textbox', { name: /Company Name/i }), 'vk-law');
   await userEvent.type(getByRole('textbox', { name: /Username/i }), 'johndoe');
   await userEvent.type(getByRole('textbox', { name: /Email/i }), 'test@test.com');
   await userEvent.type(getByTestId('password'), 'password');

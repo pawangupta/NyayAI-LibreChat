@@ -14,7 +14,9 @@ const connect = require('./connect');
   console.purple('--------------------------');
 
   if (process.argv.length < 5) {
-    console.orange('Usage: npm run create-user <email> <name> <username> [--email-verified=false]');
+    console.orange(
+      'Usage: npm run create-user <email> <name> <username> [company_name] [--email-verified=false]',
+    );
     console.orange('Note: if you do not pass in the arguments, you will be prompted for them.');
     console.orange(
       'If you really need to pass in the password, you can do so as the 4th argument (not recommended for security).',
@@ -27,6 +29,7 @@ const connect = require('./connect');
   let password = '';
   let name = '';
   let username = '';
+  let company_name = '';
   let emailVerified = true;
 
   // Parse command line arguments
@@ -42,6 +45,8 @@ const connect = require('./connect');
       name = process.argv[i];
     } else if (!username) {
       username = process.argv[i];
+    } else if (!company_name) {
+      company_name = process.argv[i];
     } else if (!password) {
       console.red('Warning: password passed in as argument, this is not secure!');
       password = process.argv[i];
@@ -77,6 +82,13 @@ const connect = require('./connect');
     }
   }
 
+  if (!company_name) {
+    company_name = await askQuestion('Company name: (default is: default)');
+    if (!company_name) {
+      company_name = 'default';
+    }
+  }
+
   // Only prompt for emailVerified if it wasn't set via CLI
   if (!process.argv.some((arg) => arg.startsWith('--email-verified='))) {
     const emailVerifiedInput = await askQuestion(`Email verified? (Y/n, default is Y):
@@ -93,13 +105,15 @@ or the user will need to attempt logging in to have a verification link sent to 
     }
   }
 
-  const userExists = await User.findOne({ $or: [{ email }, { username }] });
+  const userExists = await User.findOne({
+    $or: [{ email }, { company_name, username }],
+  });
   if (userExists) {
-    console.red('Error: A user with that email or username already exists!');
+    console.red('Error: A user with that email or the same username in this company already exists!');
     silentExit(1);
   }
 
-  const user = { email, password, name, username, confirm_password: password };
+  const user = { email, password, name, username, company_name, confirm_password: password };
   let result;
   try {
     result = await registerUser(user, { emailVerified });
