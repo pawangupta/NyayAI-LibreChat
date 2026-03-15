@@ -35,3 +35,17 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
+    
+  #Mongo Express for DB management
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017/LibreChat
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=nyayai123   # change this
+    depends_on:
+      - mongodb

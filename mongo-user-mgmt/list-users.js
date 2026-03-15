@@ -17,7 +17,7 @@ moduleAlias.addAlias('~', path.resolve(__dirname, '..', 'api'));
 
 const mongoose = require('mongoose');
 const { User } = require('@librechat/data-schemas').createModels(mongoose);
-const connect = require('./connect');
+const connect = require('../config/connect');
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);

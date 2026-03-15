@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "exportedAt": "2026-03-12T06:49:18.725Z",
+    "database": "LibreChat",
+    "totalUsers": 4,
+    "filter": "all",
+    "sensitiveFieldsIncluded": false
+  },
+  "users": [
+    {
+      "_id": "695b3dec2fcf6de469a434a9",
+      "name": "Pawan",
+      "username": "pawan",
+      "email": "pawan.k.gupta@gmail.com",
+      "emailVerified": true,
+      "avatar": null,
+      "provider": "local",
+      "role": "ADMIN",
+      "plugins": [],
+      "twoFactorEnabled": false,
+      "termsAccepted": false,
+      "personalization": {
+        "memories": true,
+        "_id": "695b3dec2fcf6de469a434a8"
+      },
+      "backupCodes": [],
+      "refreshToken": [],
+      "favorites": [],
+      "createdAt": "2026-01-05T04:28:28.400Z",
+      "updatedAt": "2026-01-05T04:28:28.405Z"
+    },
+    {
+      "_id": "6964eb2d2176d81df8dc25ad",
+      "name": "pawan",
+      "username": "pawan",
+      "email": "abc@abc.com",
+      "emailVerified": true,
+      "avatar": null,
+      "provider": "local",
+      "role": "USER",
+      "plugins": [],
+      "twoFactorEnabled": false,
+      "termsAccepted": false,
+      "personalization": {
+        "memories": true,
+        "_id": "6964eb2d2176d81df8dc25ac"
+      },
+      "backupCodes": [],
+      "refreshToken": [],
+      "createdAt": "2026-01-12T12:38:05.000Z",
+      "updatedAt": "2026-01-12T12:38:05.002Z"
+    },
+    {
+      "_id": "699fef4495813621eb963b3e",
+      "name": "abcd",
+      "username": "abcd",
+      "email": "abcd@abc.com",
+      "emailVerified": true,
+      "avatar": null,
+      "provider": "local",
+      "role": "USER",
+      "plugins": [],
+      "twoFactorEnabled": false,
+      "termsAccepted": false,
+      "personalization": {
+        "memories": true,
+        "_id": "699fef4495813621eb963b3d"
+      },
+      "backupCodes": [],
+      "refreshToken": [],
+      "createdAt": "2026-02-26T06:59:16.467Z",
+      "updatedAt": "2026-02-26T06:59:16.469Z"
+    },
+    {
+      "_id": "69a12539928def3703c29e4d",
+      "name": "Ravi Kumar",
+      "username": "ravikumar",
+      "email": "ravikumar@abc-associates.com",
+      "emailVerified": true,
+      "avatar": null,
+      "provider": "local",
+      "role": "USER",
+      "plugins": [],
+      "twoFactorEnabled": false,
+      "termsAccepted": false,
+      "personalization": {
+        "memories": true,
+        "_id": "69a12539928def3703c29e4c"
+      },
+      "backupCodes": [],
+      "refreshToken": [],
+      "createdAt": "2026-02-27T05:01:45.349Z",
+      "updatedAt": "2026-02-27T05:02:51.845Z",
+      "company_name": "abc-associates",
+      "company_slug": "abc-associates"
+    }
+  ]
+}
