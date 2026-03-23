@@ -221,8 +221,7 @@ const AgentController = async (req, res, next, initializeClient, addTitle) => {
     // Resolve database-related data
     const { conversation: convoData = {} } = await databasePromise;
     const conversation = { ...convoData };
-    conversation.title =
-      conversation && !conversation.title ? null : conversation?.title || 'New Chat';
+    conversation.title = conversation && !conversation.title ? null : conversation?.title || 'New Chat';
 
     // Process files if needed
     if (req.body.files && client.options?.attachments) {

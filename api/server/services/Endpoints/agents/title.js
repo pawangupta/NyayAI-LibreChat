@@ -3,6 +3,7 @@ const { logger } = require('@librechat/data-schemas');
 const { CacheKeys } = require('librechat-data-provider');
 const getLogStores = require('~/cache/getLogStores');
 const { saveConvo } = require('~/models');
+const { getFirstPromptTitle } = require('~/server/utils/getFirstPromptTitle');
 
 /**
  * Add title to conversation in a way that avoids memory retention
@@ -22,6 +23,20 @@ const addTitle = async (req, { text, response, client }) => {
   /** @type {NodeJS.Timeout} */
   let timeoutId;
   try {
+    const initialTitle = getFirstPromptTitle(text);
+    if (initialTitle) {
+      await titleCache.set(key, initialTitle, 120000);
+      await saveConvo(
+        req,
+        {
+          conversationId: response.conversationId,
+          title: initialTitle,
+        },
+        { context: 'api/server/services/Endpoints/agents/title.js' },
+      );
+      return;
+    }
+
     const timeoutPromise = new Promise((_, reject) => {
       timeoutId = setTimeout(() => reject(new Error('Title generation timeout')), 45000);
     }).catch((error) => {

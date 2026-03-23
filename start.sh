@@ -31,7 +31,25 @@ fi
 # Start LibreChat
 echo ""
 echo "Starting LibreChat services..."
-docker compose up -d
+
+CORE_SERVICES=(api mongodb vectordb rag_api)
+START_SERVICES=("${CORE_SERVICES[@]}")
+
+if docker compose config --services 2>/dev/null | grep -qx "mongo-express"; then
+    if docker ps -a --format '{{.Names}}' | grep -qx 'mongo-express'; then
+        echo "⚠ mongo-express container already exists; skipping recreation"
+        if ! docker ps --format '{{.Names}}' | grep -qx 'mongo-express'; then
+            echo "↻ Starting existing mongo-express container"
+            docker start mongo-express >/dev/null
+        else
+            echo "✓ Using existing mongo-express container"
+        fi
+    else
+        START_SERVICES+=(mongo-express)
+    fi
+fi
+
+docker compose up -d "${START_SERVICES[@]}"
 
 # Wait for services to be ready
 echo ""

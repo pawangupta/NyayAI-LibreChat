@@ -16,7 +16,7 @@ services:
     environment:
       - HOST=0.0.0.0
       - MONGO_URI=mongodb://mongodb:27017/LibreChat
-      - MEILI_HOST=http://meilisearch:7700
+      #- MEILI_HOST=http://meilisearch:7700
       - RAG_PORT=${RAG_PORT:-8000}
       - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
     volumes:
@@ -36,16 +36,16 @@ services:
     volumes:
       - ./data-node:/data/db
     command: mongod --noauth
-  meilisearch:
-    container_name: chat-meilisearch
-    image: getmeili/meilisearch:v1.12.3
-    restart: always
-    environment:
-      - MEILI_HOST=http://meilisearch:7700
-      - MEILI_NO_ANALYTICS=true
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
-    volumes:
-      - ./meili_data_v1.12:/meili_data
+  #meilisearch:
+    #container_name: chat-meilisearch
+    #image: getmeili/meilisearch:v1.12.3
+    #restart: always
+    #environment:
+     # - MEILI_HOST=http://meilisearch:7700
+     #- MEILI_NO_ANALYTICS=true
+     #- MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    #volumes:
+    #  - ./meili_data_v1.12:/meili_data
   vectordb:
     container_name: vectordb
     image: pgvector/pgvector:0.8.0-pg15-trixie

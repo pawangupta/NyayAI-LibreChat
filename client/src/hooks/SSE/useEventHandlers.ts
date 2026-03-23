@@ -568,9 +568,15 @@ export default function useEventHandlers({
             QueryKeys.conversation,
             conversation.conversationId,
           ]);
-          if (!cachedConvo) {
-            queryClient.setQueryData([QueryKeys.conversation, conversation.conversationId], update);
-          }
+          queryClient.setQueryData([QueryKeys.conversation, conversation.conversationId], {
+            ...cachedConvo,
+            ...update,
+          });
+
+          updateConvoInAllQueries(queryClient, conversation.conversationId as string, (prev) => ({
+            ...prev,
+            ...update,
+          }));
           return update;
         });
 

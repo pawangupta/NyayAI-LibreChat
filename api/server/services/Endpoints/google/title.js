@@ -3,6 +3,7 @@ const { EModelEndpoint, CacheKeys, Constants, googleSettings } = require('librec
 const getLogStores = require('~/cache/getLogStores');
 const initializeClient = require('./initialize');
 const { saveConvo } = require('~/models');
+const { getFirstPromptTitle } = require('~/server/utils/getFirstPromptTitle');
 
 const addTitle = async (req, { text, response, client }) => {
   const { TITLE_CONVO = 'true' } = process.env ?? {};
@@ -41,11 +42,13 @@ const addTitle = async (req, { text, response, client }) => {
   const titleCache = getLogStores(CacheKeys.GEN_TITLE);
   const key = `${req.user.id}-${response.conversationId}`;
 
-  const title = await titleClient.titleConvo({
-    text,
-    responseText: response?.text ?? '',
-    conversationId: response.conversationId,
-  });
+  const title =
+    getFirstPromptTitle(text) ??
+    (await titleClient.titleConvo({
+      text,
+      responseText: response?.text ?? '',
+      conversationId: response.conversationId,
+    }));
   await titleCache.set(key, title, 120000);
   await saveConvo(
     req,

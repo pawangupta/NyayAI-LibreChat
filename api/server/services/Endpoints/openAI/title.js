@@ -2,6 +2,7 @@ const { isEnabled } = require('@librechat/api');
 const { CacheKeys } = require('librechat-data-provider');
 const getLogStores = require('~/cache/getLogStores');
 const { saveConvo } = require('~/models');
+const { getFirstPromptTitle } = require('~/server/utils/getFirstPromptTitle');
 
 const addTitle = async (req, { text, response, client }) => {
   const { TITLE_CONVO = 'true' } = process.env ?? {};
@@ -16,11 +17,14 @@ const addTitle = async (req, { text, response, client }) => {
   const titleCache = getLogStores(CacheKeys.GEN_TITLE);
   const key = `${req.user.id}-${response.conversationId}`;
 
-  const title = await client.titleConvo({
-    text,
-    responseText: response?.text ?? '',
-    conversationId: response.conversationId,
-  });
+  const title =
+    getFirstPromptTitle(text) ??
+    (await client.titleConvo({
+      text,
+      responseText: response?.text ?? '',
+      conversationId: response.conversationId,
+    }));
+
   await titleCache.set(key, title, 120000);
   await saveConvo(
     req,
