@@ -8,6 +8,12 @@ import type {
 } from 'librechat-data-provider';
 import { MessageContext, SearchContext } from '~/Providers';
 import MemoryArtifacts from './MemoryArtifacts';
+import type { AgentResponseLayout } from './AgentResponseLayout';
+import ContractReviewWrapper, {
+  extractContractReviewPreview,
+  extractContractReviewRawText,
+  sanitizeContractReviewDisplayText,
+} from './ContractReviewWrapper';
 import LegalResearchWrapper, {
   extractLegalResearchPreview,
 } from './LegalResearchWrapper';
@@ -23,7 +29,7 @@ type ContentPartsProps = {
   attachments?: TAttachment[];
   searchResults?: { [key: string]: SearchResultData };
   isCreatedByUser: boolean;
-  useLegalResearchLayout?: boolean;
+  agentResponseLayout?: AgentResponseLayout | null;
   isLast: boolean;
   isSubmitting: boolean;
   isLatestMessage?: boolean;
@@ -44,7 +50,7 @@ const ContentParts = memo(
     attachments,
     searchResults,
     isCreatedByUser,
-    useLegalResearchLayout = false,
+    agentResponseLayout = null,
     isLast,
     isSubmitting,
     isLatestMessage,
@@ -54,20 +60,61 @@ const ContentParts = memo(
     setSiblingIdx,
   }: ContentPartsProps) => {
     const attachmentMap = useMemo(() => mapAttachments(attachments ?? []), [attachments]);
-    const previewText = useMemo(
-      () => extractLegalResearchPreview({ content }),
-      [content],
+    const renderedContent = useMemo(() => {
+      if (agentResponseLayout !== 'contract-review') {
+        return content;
+      }
+
+      return content?.map((part) => {
+        if (!part || part.type !== ContentTypes.TEXT) {
+          return part;
+        }
+
+        if (typeof part.text === 'string') {
+          return { ...part, text: sanitizeContractReviewDisplayText(part.text) };
+        }
+
+        if (typeof part.text?.value === 'string') {
+          return {
+            ...part,
+            text: {
+              ...part.text,
+              value: sanitizeContractReviewDisplayText(part.text.value),
+            },
+          };
+        }
+
+        return part;
+      });
+    }, [content, agentResponseLayout]);
+    const previewText = useMemo(() => {
+      if (agentResponseLayout === 'legal-research') {
+        return extractLegalResearchPreview({ content });
+      }
+
+      if (agentResponseLayout === 'contract-review') {
+        return extractContractReviewPreview({ content });
+      }
+
+      return '';
+    }, [content, agentResponseLayout]);
+    const contractRawText = useMemo(
+      () =>
+        agentResponseLayout === 'contract-review'
+          ? extractContractReviewRawText({ content })
+          : '',
+      [content, agentResponseLayout],
     );
 
     const effectiveIsSubmitting = isLatestMessage ? isSubmitting : false;
 
-    if (!content) {
+    if (!renderedContent) {
       return null;
     }
     if (edit === true && enterEdit && setSiblingIdx) {
       return (
         <>
-          {content.map((part, idx) => {
+          {renderedContent.map((part, idx) => {
             if (!part) {
               return null;
             }
@@ -104,7 +151,7 @@ const ContentParts = memo(
       );
     }
 
-    const parts = content.map((part, idx) => {
+    const parts = renderedContent.map((part, idx) => {
       if (!part) {
         return null;
       }
@@ -121,7 +168,7 @@ const ContentParts = memo(
             isExpanded: true,
             conversationId,
             partIndex: idx,
-            nextType: content[idx + 1]?.type,
+            nextType: renderedContent[idx + 1]?.type,
             isSubmitting: effectiveIsSubmitting,
             isLatestMessage,
           }}
@@ -132,8 +179,8 @@ const ContentParts = memo(
             isSubmitting={effectiveIsSubmitting}
             key={`part-${messageId}-${idx}`}
             isCreatedByUser={isCreatedByUser}
-            isLast={idx === content.length - 1}
-            showCursor={idx === content.length - 1 && isLast}
+            isLast={idx === renderedContent.length - 1}
+            showCursor={idx === renderedContent.length - 1 && isLast}
           />
         </MessageContext.Provider>
       );
@@ -148,13 +195,17 @@ const ContentParts = memo(
 
     return (
       <SearchContext.Provider value={{ searchResults }}>
-        {useLegalResearchLayout ? (
+        {agentResponseLayout === 'legal-research' ? (
           <LegalResearchWrapper
             previewText={previewText}
             sources={<Sources messageId={messageId} conversationId={conversationId || undefined} />}
           >
             {mainContent}
           </LegalResearchWrapper>
+        ) : agentResponseLayout === 'contract-review' ? (
+          <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
+            {mainContent}
+          </ContractReviewWrapper>
         ) : (
           <>
             <MemoryArtifacts attachments={attachments} />

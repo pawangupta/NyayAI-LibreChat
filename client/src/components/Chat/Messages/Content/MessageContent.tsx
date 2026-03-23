@@ -5,12 +5,17 @@ import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
 import Error from '~/components/Messages/Content/Error';
 import { SearchContext, useMessageContext } from '~/Providers';
+import { getAgentResponseLayout } from './AgentResponseLayout';
+import ContractReviewWrapper, {
+  extractContractReviewPreview,
+  extractContractReviewRawText,
+  sanitizeContractReviewDisplayText,
+} from './ContractReviewWrapper';
 import MarkdownLite from './MarkdownLite';
 import EditMessage from './EditMessage';
 import Thinking from './Parts/Thinking';
 import LegalResearchWrapper, {
   extractLegalResearchPreview,
-  isLegalResearchResponse,
 } from './LegalResearchWrapper';
 import { useLocalize } from '~/hooks';
 import Container from './Container';
@@ -149,9 +154,9 @@ const MessageContent = ({
 }: TMessageContentProps) => {
   const { message } = props;
   const { messageId } = message;
-  const useLegalResearchLayout = useMemo(
+  const agentResponseLayout = useMemo(
     () =>
-      isLegalResearchResponse({
+      getAgentResponseLayout({
         endpoint: message.endpoint,
         model: message.model,
         isCreatedByUser: message.isCreatedByUser,
@@ -173,9 +178,30 @@ const MessageContent = ({
     () => parseThinkingContent(safeText),
     [safeText],
   );
-  const previewText = useMemo(
-    () => extractLegalResearchPreview({ fallbackText: regularContent }),
-    [regularContent],
+  const displayText = useMemo(
+    () =>
+      agentResponseLayout === 'contract-review'
+        ? sanitizeContractReviewDisplayText(regularContent)
+        : regularContent,
+    [regularContent, agentResponseLayout],
+  );
+  const previewText = useMemo(() => {
+    if (agentResponseLayout === 'legal-research') {
+      return extractLegalResearchPreview({ fallbackText: regularContent });
+    }
+
+    if (agentResponseLayout === 'contract-review') {
+      return extractContractReviewPreview({ fallbackText: regularContent });
+    }
+
+    return '';
+  }, [regularContent, agentResponseLayout]);
+  const contractRawText = useMemo(
+    () =>
+      agentResponseLayout === 'contract-review'
+        ? extractContractReviewRawText({ fallbackText: regularContent })
+        : '',
+    [regularContent, agentResponseLayout],
   );
   const showRegularCursor = useMemo(() => isLast && isSubmitting, [isLast, isSubmitting]);
 
@@ -207,17 +233,27 @@ const MessageContent = ({
       <DisplayMessage
         key={`display-${messageId}`}
         showCursor={showRegularCursor}
-        text={regularContent}
+        text={displayText}
         {...props}
       />
       {unfinishedMessage}
     </>
   );
 
-  if (useLegalResearchLayout) {
+  if (agentResponseLayout === 'legal-research') {
     return (
       <SearchContext.Provider value={{}}>
         <LegalResearchWrapper previewText={previewText}>{displayContent}</LegalResearchWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  if (agentResponseLayout === 'contract-review') {
+    return (
+      <SearchContext.Provider value={{}}>
+        <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
+          {displayContent}
+        </ContractReviewWrapper>
       </SearchContext.Provider>
     );
   }

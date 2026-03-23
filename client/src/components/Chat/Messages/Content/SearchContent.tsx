@@ -9,10 +9,15 @@ import type {
   SearchResultData,
   TMessageContentParts,
 } from 'librechat-data-provider';
+import { getAgentResponseLayout } from './AgentResponseLayout';
+import ContractReviewWrapper, {
+  extractContractReviewPreview,
+  extractContractReviewRawText,
+  sanitizeContractReviewDisplayText,
+} from './ContractReviewWrapper';
 import { UnfinishedMessage } from './MessageContent';
 import LegalResearchWrapper, {
   extractLegalResearchPreview,
-  isLegalResearchResponse,
 } from './LegalResearchWrapper';
 import Sources from '~/components/Web/Sources';
 import { cn, mapAttachments } from '~/utils';
@@ -32,26 +37,67 @@ const SearchContent = ({
 }) => {
   const enableUserMsgMarkdown = useRecoilValue(store.enableUserMsgMarkdown);
   const { messageId } = message;
-  const useLegalResearchLayout = useMemo(
+  const agentResponseLayout = useMemo(
     () =>
-      isLegalResearchResponse({
+      getAgentResponseLayout({
         endpoint: message.endpoint,
         model: message.model,
         isCreatedByUser: message.isCreatedByUser,
       }),
     [message.endpoint, message.model, message.isCreatedByUser],
   );
-  const previewText = useMemo(
-    () => extractLegalResearchPreview({ content: message.content, fallbackText: message.text || '' }),
-    [message.content, message.text],
+  const previewText = useMemo(() => {
+    if (agentResponseLayout === 'legal-research') {
+      return extractLegalResearchPreview({ content: message.content, fallbackText: message.text || '' });
+    }
+
+    if (agentResponseLayout === 'contract-review') {
+      return extractContractReviewPreview({ content: message.content, fallbackText: message.text || '' });
+    }
+
+    return '';
+  }, [message.content, message.text, agentResponseLayout]);
+  const contractRawText = useMemo(
+    () =>
+      agentResponseLayout === 'contract-review'
+        ? extractContractReviewRawText({ content: message.content, fallbackText: message.text || '' })
+        : '',
+    [message.content, message.text, agentResponseLayout],
   );
 
   const attachmentMap = useMemo(() => mapAttachments(attachments ?? []), [attachments]);
+  const sanitizedParts = useMemo(() => {
+    if (agentResponseLayout !== 'contract-review' || !Array.isArray(message.content)) {
+      return message.content;
+    }
 
-  if (Array.isArray(message.content) && message.content.length > 0) {
+    return message.content.map((part) => {
+      if (!part || part.type !== ContentTypes.TEXT) {
+        return part;
+      }
+
+      if (typeof part.text === 'string') {
+        return { ...part, text: sanitizeContractReviewDisplayText(part.text) };
+      }
+
+      if (typeof part.text?.value === 'string') {
+        return {
+          ...part,
+          text: {
+            ...part.text,
+            value: sanitizeContractReviewDisplayText(part.text.value),
+          },
+        };
+      }
+
+      return part;
+    });
+  }, [message.content, agentResponseLayout]);
+
+  if (Array.isArray(sanitizedParts) && sanitizedParts.length > 0) {
     const renderedParts = (
       <>
-        {message.content
+        {sanitizedParts
           .filter((part: TMessageContentParts | undefined) => part)
           .map((part: TMessageContentParts | undefined, idx: number) => {
             if (!part) {
@@ -84,10 +130,14 @@ const SearchContent = ({
 
     return (
       <SearchContext.Provider value={{ searchResults }}>
-        {useLegalResearchLayout ? (
+        {agentResponseLayout === 'legal-research' ? (
           <LegalResearchWrapper previewText={previewText} sources={<Sources />}>
             {renderedParts}
           </LegalResearchWrapper>
+        ) : agentResponseLayout === 'contract-review' ? (
+          <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
+            {renderedParts}
+          </ContractReviewWrapper>
         ) : (
           <>
             <Sources />
@@ -107,14 +157,30 @@ const SearchContent = ({
       )}
       dir="auto"
     >
-      <MarkdownLite content={message.text || ''} />
+      <MarkdownLite
+        content={
+          agentResponseLayout === 'contract-review'
+            ? sanitizeContractReviewDisplayText(message.text || '')
+            : message.text || ''
+        }
+      />
     </div>
   );
 
-  if (useLegalResearchLayout) {
+  if (agentResponseLayout === 'legal-research') {
     return (
       <SearchContext.Provider value={{ searchResults }}>
         <LegalResearchWrapper previewText={previewText}>{markdownContent}</LegalResearchWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  if (agentResponseLayout === 'contract-review') {
+    return (
+      <SearchContext.Provider value={{ searchResults }}>
+        <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
+          {markdownContent}
+        </ContractReviewWrapper>
       </SearchContext.Provider>
     );
   }

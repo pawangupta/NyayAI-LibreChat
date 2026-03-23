@@ -4,7 +4,7 @@ import { useRecoilValue } from 'recoil';
 import type { TMessage, TMessageContentParts } from 'librechat-data-provider';
 import type { TMessageProps, TMessageIcon } from '~/common';
 import ContentParts from '~/components/Chat/Messages/Content/ContentParts';
-import { isLegalResearchResponse } from '~/components/Chat/Messages/Content/LegalResearchWrapper';
+import { getAgentResponseLayout } from '~/components/Chat/Messages/Content/AgentResponseLayout';
 import PlaceholderRow from '~/components/Chat/Messages/ui/PlaceholderRow';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import HoverButtons from '~/components/Chat/Messages/HoverButtons';
@@ -75,9 +75,9 @@ const ContentRender = memo(
     const isLatestMessage = msg?.messageId === latestMessage?.messageId;
     const showCardRender = isLast && !isSubmittingFamily && isCard;
     const isLatestCard = isCard && !isSubmittingFamily && isLatestMessage;
-    const useLegalResearchLayout = useMemo(
+    const agentResponseLayout = useMemo(
       () =>
-        isLegalResearchResponse({
+        getAgentResponseLayout({
           endpoint: msg?.endpoint ?? conversation?.endpoint,
           model: msg?.model ?? conversation?.model,
           isCreatedByUser: msg?.isCreatedByUser,
@@ -193,7 +193,7 @@ const ContentRender = memo(
                 attachments={attachments}
                 isSubmitting={isSubmitting}
                 searchResults={searchResults}
-                useLegalResearchLayout={useLegalResearchLayout}
+                agentResponseLayout={agentResponseLayout}
                 setSiblingIdx={setSiblingIdx}
                 isLatestMessage={isLatestMessage}
                 isCreatedByUser={msg.isCreatedByUser}
