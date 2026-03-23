@@ -47,35 +47,38 @@ export default function NewChat({
 
   return (
     <>
-      <div className="flex items-center justify-between py-[2px] md:py-2">
-        <TooltipAnchor
-          description={localize('com_nav_close_sidebar')}
-          render={
-            <Button
-              size="icon"
-              variant="outline"
-              data-testid="close-sidebar-button"
-              aria-label={localize('com_nav_close_sidebar')}
-              className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
-              onClick={toggleNav}
-            >
-              <Sidebar className="max-md:hidden" />
-              <MobileSidebar className="m-1 inline-flex size-10 items-center justify-center md:hidden" />
-            </Button>
-          }
-        />
-
-        <div className="flex flex-1 items-center justify-center px-1">
-          <img
-            src="/assets/NyayAI_Dark.png"
-            alt="NyayAI"
-            className="nyay-nav-logo h-7 w-auto object-contain"
-            draggable={false}
-          />
+      <div className="flex items-center py-[2px] md:py-2">
+        <div className="flex flex-1 items-center gap-2 pl-1">
+          <div className="nyay-logo-badge flex-shrink-0 overflow-hidden rounded-lg">
+            <img
+              src="/assets/NyayAI_Dark.png"
+              alt="NyayAI"
+              className="h-8 w-8 object-cover"
+              draggable={false}
+            />
+          </div>
+          <span className="nyay-wordmark text-sm font-semibold text-text-primary">NyayAI</span>
         </div>
 
-        <div className="flex gap-0.5">
+        <div className="flex items-center gap-0.5">
           {headerButtons}
+
+          <TooltipAnchor
+            description={localize('com_nav_close_sidebar')}
+            render={
+              <Button
+                size="icon"
+                variant="outline"
+                data-testid="close-sidebar-button"
+                aria-label={localize('com_nav_close_sidebar')}
+                className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
+                onClick={toggleNav}
+              >
+                <Sidebar className="max-md:hidden" />
+                <MobileSidebar className="m-1 inline-flex size-10 items-center justify-center md:hidden" />
+              </Button>
+            }
+          />
 
           <TooltipAnchor
             description={localize('com_ui_new_chat')}

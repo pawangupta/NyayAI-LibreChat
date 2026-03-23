@@ -1,43 +1,34 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   NyayAI Branding styles
+   NyayAI Branding CSS
    Import in client/src/style.css:  @import './nyayai-branding.css';
    ─────────────────────────────────────────────────────────────────────────────
 
-   The NyayAI logo PNG (NyayAI_Dark.png) has a solid dark background with
-   white icon. We use mix-blend-mode to make the background transparent:
-
-   Dark mode:  multiply blends dark bg into dark sidebar → bg disappears,
-               white icon remains visible.
-
-   Light mode: multiply blends dark bg into light sidebar → bg appears dark
-               (unwanted). We also apply invert() so:
-               dark bg → light bg (blends away), white icon → dark icon.
+   Strategy: keep the dark logo background as part of the brand badge rather
+   than trying to blend it away. This avoids dark-mode visibility issues.
 */
 
-/* ── Sidebar header logo (h-7 = 28px) ───────────────────────────────────── */
-.nyay-nav-logo {
-  mix-blend-mode: multiply;
-  opacity: 0.9;
-  filter: none;
+.nyay-logo-badge {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
 }
 
-html.light .nyay-nav-logo,
-:root:not(.dark) .nyay-nav-logo {
-  mix-blend-mode: multiply;
-  filter: invert(1);
-  opacity: 0.85;
+html.light .nyay-logo-badge,
+:root:not(.dark) .nyay-logo-badge {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
-/* ── Landing page logo (size-10 = 40px) ─────────────────────────────────── */
+.nyay-wordmark {
+  letter-spacing: -0.01em;
+}
+
 .nyay-landing-logo {
-  mix-blend-mode: multiply;
-  opacity: 0.9;
-  filter: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-html.light .nyay-landing-logo,
-:root:not(.dark) .nyay-landing-logo {
-  mix-blend-mode: multiply;
-  filter: invert(1);
-  opacity: 0.85;
+.nyay-nav-logo,
+.nyay-landing-logo {
+  mix-blend-mode: normal;
+  filter: none;
+  opacity: 1;
 }
