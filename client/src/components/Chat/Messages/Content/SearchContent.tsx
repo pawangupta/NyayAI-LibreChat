@@ -10,6 +10,10 @@ import type {
   TMessageContentParts,
 } from 'librechat-data-provider';
 import { UnfinishedMessage } from './MessageContent';
+import LegalResearchWrapper, {
+  extractLegalResearchPreview,
+  isLegalResearchResponse,
+} from './LegalResearchWrapper';
 import Sources from '~/components/Web/Sources';
 import { cn, mapAttachments } from '~/utils';
 import { SearchContext } from '~/Providers';
@@ -28,13 +32,25 @@ const SearchContent = ({
 }) => {
   const enableUserMsgMarkdown = useRecoilValue(store.enableUserMsgMarkdown);
   const { messageId } = message;
+  const useLegalResearchLayout = useMemo(
+    () =>
+      isLegalResearchResponse({
+        endpoint: message.endpoint,
+        model: message.model,
+        isCreatedByUser: message.isCreatedByUser,
+      }),
+    [message.endpoint, message.model, message.isCreatedByUser],
+  );
+  const previewText = useMemo(
+    () => extractLegalResearchPreview({ content: message.content, fallbackText: message.text || '' }),
+    [message.content, message.text],
+  );
 
   const attachmentMap = useMemo(() => mapAttachments(attachments ?? []), [attachments]);
 
   if (Array.isArray(message.content) && message.content.length > 0) {
-    return (
-      <SearchContext.Provider value={{ searchResults }}>
-        <Sources />
+    const renderedParts = (
+      <>
         {message.content
           .filter((part: TMessageContentParts | undefined) => part)
           .map((part: TMessageContentParts | undefined, idx: number) => {
@@ -63,11 +79,26 @@ const SearchContent = ({
             </DelayedRender>
           </Suspense>
         )}
+      </>
+    );
+
+    return (
+      <SearchContext.Provider value={{ searchResults }}>
+        {useLegalResearchLayout ? (
+          <LegalResearchWrapper previewText={previewText} sources={<Sources />}>
+            {renderedParts}
+          </LegalResearchWrapper>
+        ) : (
+          <>
+            <Sources />
+            {renderedParts}
+          </>
+        )}
       </SearchContext.Provider>
     );
   }
 
-  return (
+  const markdownContent = (
     <div
       className={cn(
         'markdown prose dark:prose-invert light w-full break-words',
@@ -79,6 +110,16 @@ const SearchContent = ({
       <MarkdownLite content={message.text || ''} />
     </div>
   );
+
+  if (useLegalResearchLayout) {
+    return (
+      <SearchContext.Provider value={{ searchResults }}>
+        <LegalResearchWrapper previewText={previewText}>{markdownContent}</LegalResearchWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  return markdownContent;
 };
 
 export default SearchContent;

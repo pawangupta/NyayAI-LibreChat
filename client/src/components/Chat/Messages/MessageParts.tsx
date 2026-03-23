@@ -6,6 +6,7 @@ import type { TMessageProps, TMessageIcon } from '~/common';
 import { useMessageHelpers, useLocalize, useAttachments } from '~/hooks';
 import MessageIcon from '~/components/Chat/Messages/MessageIcon';
 import ContentParts from './Content/ContentParts';
+import { isLegalResearchResponse } from './Content/LegalResearchWrapper';
 import { fontSizeAtom } from '~/store/fontSize';
 import SiblingSwitch from './SiblingSwitch';
 import MultiMessage from './MultiMessage';
@@ -41,6 +42,21 @@ export default function Message(props: TMessageProps) {
   const fontSize = useAtomValue(fontSizeAtom);
   const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
   const { children, messageId = null, isCreatedByUser } = message ?? {};
+  const useLegalResearchLayout = useMemo(
+    () =>
+      isLegalResearchResponse({
+        endpoint: message?.endpoint ?? conversation?.endpoint,
+        model: message?.model ?? conversation?.model,
+        isCreatedByUser: message?.isCreatedByUser,
+      }),
+    [
+      conversation?.endpoint,
+      conversation?.model,
+      message?.endpoint,
+      message?.model,
+      message?.isCreatedByUser,
+    ],
+  );
 
   const name = useMemo(() => {
     let result = '';
@@ -124,6 +140,7 @@ export default function Message(props: TMessageProps) {
                     isSubmitting={isSubmitting}
                     searchResults={searchResults}
                     messageId={message.messageId}
+                    useLegalResearchLayout={useLegalResearchLayout}
                     setSiblingIdx={setSiblingIdx}
                     isCreatedByUser={message.isCreatedByUser}
                     conversationId={conversation?.conversationId}

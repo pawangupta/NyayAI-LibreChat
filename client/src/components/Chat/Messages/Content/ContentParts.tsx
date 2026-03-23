@@ -8,6 +8,9 @@ import type {
 } from 'librechat-data-provider';
 import { MessageContext, SearchContext } from '~/Providers';
 import MemoryArtifacts from './MemoryArtifacts';
+import LegalResearchWrapper, {
+  extractLegalResearchPreview,
+} from './LegalResearchWrapper';
 import Sources from '~/components/Web/Sources';
 import { mapAttachments } from '~/utils/map';
 import { EditTextPart } from './Parts';
@@ -20,6 +23,7 @@ type ContentPartsProps = {
   attachments?: TAttachment[];
   searchResults?: { [key: string]: SearchResultData };
   isCreatedByUser: boolean;
+  useLegalResearchLayout?: boolean;
   isLast: boolean;
   isSubmitting: boolean;
   isLatestMessage?: boolean;
@@ -40,6 +44,7 @@ const ContentParts = memo(
     attachments,
     searchResults,
     isCreatedByUser,
+    useLegalResearchLayout = false,
     isLast,
     isSubmitting,
     isLatestMessage,
@@ -49,6 +54,10 @@ const ContentParts = memo(
     setSiblingIdx,
   }: ContentPartsProps) => {
     const attachmentMap = useMemo(() => mapAttachments(attachments ?? []), [attachments]);
+    const previewText = useMemo(
+      () => extractLegalResearchPreview({ content }),
+      [content],
+    );
 
     const effectiveIsSubmitting = isLatestMessage ? isSubmitting : false;
 
@@ -95,47 +104,65 @@ const ContentParts = memo(
       );
     }
 
-    return (
+    const parts = content.map((part, idx) => {
+      if (!part) {
+        return null;
+      }
+
+      const toolCallId =
+        (part?.[ContentTypes.TOOL_CALL] as Agents.ToolCall | undefined)?.id ?? '';
+      const partAttachments = attachmentMap[toolCallId];
+
+      return (
+        <MessageContext.Provider
+          key={`provider-${messageId}-${idx}`}
+          value={{
+            messageId,
+            isExpanded: true,
+            conversationId,
+            partIndex: idx,
+            nextType: content[idx + 1]?.type,
+            isSubmitting: effectiveIsSubmitting,
+            isLatestMessage,
+          }}
+        >
+          <Part
+            part={part}
+            attachments={partAttachments}
+            isSubmitting={effectiveIsSubmitting}
+            key={`part-${messageId}-${idx}`}
+            isCreatedByUser={isCreatedByUser}
+            isLast={idx === content.length - 1}
+            showCursor={idx === content.length - 1 && isLast}
+          />
+        </MessageContext.Provider>
+      );
+    });
+
+    const mainContent = (
       <>
-        <SearchContext.Provider value={{ searchResults }}>
-          <MemoryArtifacts attachments={attachments} />
-          <Sources messageId={messageId} conversationId={conversationId || undefined} />
-          {content.map((part, idx) => {
-            if (!part) {
-              return null;
-            }
-
-            const toolCallId =
-              (part?.[ContentTypes.TOOL_CALL] as Agents.ToolCall | undefined)?.id ?? '';
-            const partAttachments = attachmentMap[toolCallId];
-
-            return (
-              <MessageContext.Provider
-                key={`provider-${messageId}-${idx}`}
-                value={{
-                  messageId,
-                  isExpanded: true,
-                  conversationId,
-                  partIndex: idx,
-                  nextType: content[idx + 1]?.type,
-                  isSubmitting: effectiveIsSubmitting,
-                  isLatestMessage,
-                }}
-              >
-                <Part
-                  part={part}
-                  attachments={partAttachments}
-                  isSubmitting={effectiveIsSubmitting}
-                  key={`part-${messageId}-${idx}`}
-                  isCreatedByUser={isCreatedByUser}
-                  isLast={idx === content.length - 1}
-                  showCursor={idx === content.length - 1 && isLast}
-                />
-              </MessageContext.Provider>
-            );
-          })}
-        </SearchContext.Provider>
+        <MemoryArtifacts attachments={attachments} />
+        {parts}
       </>
+    );
+
+    return (
+      <SearchContext.Provider value={{ searchResults }}>
+        {useLegalResearchLayout ? (
+          <LegalResearchWrapper
+            previewText={previewText}
+            sources={<Sources messageId={messageId} conversationId={conversationId || undefined} />}
+          >
+            {mainContent}
+          </LegalResearchWrapper>
+        ) : (
+          <>
+            <MemoryArtifacts attachments={attachments} />
+            <Sources messageId={messageId} conversationId={conversationId || undefined} />
+            {parts}
+          </>
+        )}
+      </SearchContext.Provider>
     );
   },
 );

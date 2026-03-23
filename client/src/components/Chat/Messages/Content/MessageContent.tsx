@@ -4,10 +4,14 @@ import { DelayedRender } from '@librechat/client';
 import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
 import Error from '~/components/Messages/Content/Error';
-import { useMessageContext } from '~/Providers';
+import { SearchContext, useMessageContext } from '~/Providers';
 import MarkdownLite from './MarkdownLite';
 import EditMessage from './EditMessage';
 import Thinking from './Parts/Thinking';
+import LegalResearchWrapper, {
+  extractLegalResearchPreview,
+  isLegalResearchResponse,
+} from './LegalResearchWrapper';
 import { useLocalize } from '~/hooks';
 import Container from './Container';
 import Markdown from './Markdown';
@@ -145,6 +149,15 @@ const MessageContent = ({
 }: TMessageContentProps) => {
   const { message } = props;
   const { messageId } = message;
+  const useLegalResearchLayout = useMemo(
+    () =>
+      isLegalResearchResponse({
+        endpoint: message.endpoint,
+        model: message.model,
+        isCreatedByUser: message.isCreatedByUser,
+      }),
+    [message.endpoint, message.model, message.isCreatedByUser],
+  );
 
   const safeText = useMemo(() => {
     if (typeof text === 'string') {
@@ -159,6 +172,10 @@ const MessageContent = ({
   const { thinkingContent, regularContent } = useMemo(
     () => parseThinkingContent(safeText),
     [safeText],
+  );
+  const previewText = useMemo(
+    () => extractLegalResearchPreview({ fallbackText: regularContent }),
+    [regularContent],
   );
   const showRegularCursor = useMemo(() => isLast && isSubmitting, [isLast, isSubmitting]);
 
@@ -182,7 +199,7 @@ const MessageContent = ({
     return <EditMessage text={safeText} isSubmitting={isSubmitting} {...props} />;
   }
 
-  return (
+  const displayContent = (
     <>
       {thinkingContent.length > 0 && (
         <Thinking key={`thinking-${messageId}`}>{thinkingContent}</Thinking>
@@ -196,6 +213,16 @@ const MessageContent = ({
       {unfinishedMessage}
     </>
   );
+
+  if (useLegalResearchLayout) {
+    return (
+      <SearchContext.Provider value={{}}>
+        <LegalResearchWrapper previewText={previewText}>{displayContent}</LegalResearchWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  return displayContent;
 };
 
 export default memo(MessageContent);
