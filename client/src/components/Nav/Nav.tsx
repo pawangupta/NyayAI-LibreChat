@@ -17,6 +17,8 @@ import SearchBar from './SearchBar';
 import NewChat from './NewChat';
 import { cn } from '~/utils';
 import store from '~/store';
+import NyayFeatureNav from './NyayFeatureNav';
+import NyayConversationsSection from './NyayConversationsSection';
 
 const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
@@ -219,15 +221,20 @@ const Nav = memo(
                         headerButtons={headerButtons}
                         isSmallScreen={isSmallScreen}
                       />
-                      <Conversations
-                        conversations={conversations}
-                        moveToTop={moveToTop}
-                        toggleNav={itemToggleNav}
-                        containerRef={listRef}
-                        loadMoreConversations={loadMoreConversations}
-                        isLoading={isFetchingNextPage || showLoading || isLoading}
-                        isSearchLoading={isSearchLoading}
-                      />
+
+                      <NyayFeatureNav />
+
+                      <NyayConversationsSection>
+                        <Conversations
+                          conversations={conversations}
+                          moveToTop={moveToTop}
+                          toggleNav={itemToggleNav}
+                          containerRef={listRef}
+                          loadMoreConversations={loadMoreConversations}
+                          isLoading={isFetchingNextPage || showLoading || isLoading}
+                          isSearchLoading={isSearchLoading}
+                        />
+                      </NyayConversationsSection>
                     </div>
                     <Suspense fallback={null}>
                       <AccountSettings />

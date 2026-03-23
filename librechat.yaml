@@ -5,6 +5,7 @@ fileStrategy: "s3"
 interface:
   customWelcome: 'Welcome to NyayAI! Your AI-powered legal assistant.'
   fileSearch: true
+  # Keep endpointsMenu true so standard model picker still works for Naya-AI/Ollama
   endpointsMenu: true
   modelSelect: true
   parameters: true
@@ -20,8 +21,8 @@ registration:
 
 endpoints:
   custom:
-  
-    # Will Generator - OpenAI Compatible Custom Endpoint
+
+    # ── Drafting Assistant ─────────────────────────────────────────────────────
     - name: "Drafting Assistant"
       apiKey: "sk-will-backend-key-12345"
       baseURL: "http://willgen-api:8000/api"
@@ -31,7 +32,8 @@ endpoints:
         default: ["Will Drafting Assistant"]
         fetch: false
       modelDisplayLabel: "Will Drafting Assistant"
-      group: "ParaLx" 
+      # ── NyayAI nav: section header label shown in the sidebar ──────────────
+      group: "Drafting"
       titleConvo: true
       summarize: false
       forcePrompt: false
@@ -46,7 +48,7 @@ endpoints:
         temperature: 0.7
 
 
-    # Tabular Contract Review
+    # ── Contract Review ────────────────────────────────────────────────────────
     - name: "Contract Review"
       apiKey: "legal-contract-dev-key"
       baseURL: "http://host.docker.internal:8000/v1"
@@ -54,7 +56,8 @@ endpoints:
         default: ["Tabular Contract Review"]
         fetch: false
       modelDisplayLabel: "Tabular Contract Review"
-      group: "ParaLx"
+      # ── NyayAI nav: section header label shown in the sidebar ──────────────
+      group: "Contract Review"
       titleConvo: true
       titleModel: "Tabular Contract Review"
       summarize: false
@@ -68,9 +71,6 @@ endpoints:
       addParams:
         max_tokens: 4096
         temperature: 0.1
-      #iconURL: "/images/legal-icon.svg"
-      #iconURL: "/assets/NyayAI.svg"
-
       description: "AI-powered contract analysis with risk detection and redlining"
       greeting: |
         👋 Welcome to the Legal Contract Analyzer!
@@ -85,7 +85,8 @@ endpoints:
         
         📎 Simply attach your PDF, DOCX, or TXT contract file and tell me what you'd like to do!
 
-    # Legal Research - OpenAI Compatible Custom Endpoint
+
+    # ── Legal Research ─────────────────────────────────────────────────────────
     - name: "Legal Research"
       apiKey: "legal-research-dev-key"
       baseURL: "http://host.docker.internal:8002/v1"
@@ -93,7 +94,8 @@ endpoints:
         default: ["Legal Research Assistant"]
         fetch: false
       modelDisplayLabel: "Legal Research Assistant"
-      group: "ParaLx"
+      # ── NyayAI nav: section header label shown in the sidebar ──────────────
+      group: "Legal Research"
       titleConvo: true
       titleModel: "Legal Research Assistant"
       summarize: false
@@ -107,9 +109,6 @@ endpoints:
       addParams:
         max_tokens: 4096
         temperature: 0.1
-      #iconURL: "/images/legal-icon.svg"
-      #iconURL: "/assets/NyayAI.svg"
-
       description: "AI-powered legal research assistant for case law, statutes, and regulations"
       greeting: |
         👋 Welcome to the Legal Research Assistant!
@@ -121,14 +120,17 @@ endpoints:
         - Ask: **"What are the key statutes related to [topic]?"**
         - Ask: **"Summarize the legal landscape on [topic]"**
         
-        📚 Just tell me your research topic or question, and I'll get started !
+        📚 Just tell me your research topic or question, and I'll get started!
 
-  # Ollama
+
+    # ── Naya-AI (Ollama) ───────────────────────────────────────────────────────
+    # No `group` field → does NOT appear in the NyayFeatureNav.
+    # Continues to appear only in the standard model selector dropdown.
     - name: "Naya-AI"
       apiKey: "ollama"
       baseURL: "http://host.docker.internal:11434/v1"
       models:
-        default: 
+        default:
           - "gpt-oss:20b"
           - "llama3.2:3b"
         fetch: false
@@ -138,6 +140,5 @@ endpoints:
       summaryModel: "gpt-oss:20b"
       forcePrompt: false
       modelDisplayLabel: "Ollama"
-      group: "ParaLx" 
       dropParams:
         - "user"

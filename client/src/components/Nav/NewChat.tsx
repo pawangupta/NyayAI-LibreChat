@@ -64,6 +64,16 @@ export default function NewChat({
             </Button>
           }
         />
+
+        <div className="flex flex-1 items-center justify-center px-1">
+          <img
+            src="/assets/NyayAI_Dark.png"
+            alt="NyayAI"
+            className="nyay-nav-logo h-7 w-auto object-contain"
+            draggable={false}
+          />
+        </div>
+
         <div className="flex gap-0.5">
           {headerButtons}
 

@@ -1,0 +1,43 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   NyayAI Branding styles
+   Import in client/src/style.css:  @import './nyayai-branding.css';
+   ─────────────────────────────────────────────────────────────────────────────
+
+   The NyayAI logo PNG (NyayAI_Dark.png) has a solid dark background with
+   white icon. We use mix-blend-mode to make the background transparent:
+
+   Dark mode:  multiply blends dark bg into dark sidebar → bg disappears,
+               white icon remains visible.
+
+   Light mode: multiply blends dark bg into light sidebar → bg appears dark
+               (unwanted). We also apply invert() so:
+               dark bg → light bg (blends away), white icon → dark icon.
+*/
+
+/* ── Sidebar header logo (h-7 = 28px) ───────────────────────────────────── */
+.nyay-nav-logo {
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+  filter: none;
+}
+
+html.light .nyay-nav-logo,
+:root:not(.dark) .nyay-nav-logo {
+  mix-blend-mode: multiply;
+  filter: invert(1);
+  opacity: 0.85;
+}
+
+/* ── Landing page logo (size-10 = 40px) ─────────────────────────────────── */
+.nyay-landing-logo {
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+  filter: none;
+}
+
+html.light .nyay-landing-logo,
+:root:not(.dark) .nyay-landing-logo {
+  mix-blend-mode: multiply;
+  filter: invert(1);
+  opacity: 0.85;
+}
