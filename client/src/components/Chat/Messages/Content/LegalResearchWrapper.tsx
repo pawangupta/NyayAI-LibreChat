@@ -173,14 +173,14 @@ export default function LegalResearchWrapper({
             </span>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2.5">
             <h3
-              className="text-3xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900 dark:text-slate-50 sm:text-4xl"
+              className="text-[1.9rem] font-extrabold leading-tight tracking-[-0.04em] text-slate-900 dark:text-slate-50 sm:text-[2.35rem]"
               style={headlineFont}
             >
               Research findings and cited authorities
             </h3>
-            <p className="max-w-3xl text-[15px] leading-7 text-slate-600 dark:text-slate-300" style={bodyFont}>
+            <p className="max-w-3xl text-[14px] leading-6 text-slate-600 dark:text-slate-300" style={bodyFont}>
               Structured legal analysis with supporting authorities, extracted findings, and a
               refined editorial report experience.
             </p>
@@ -215,12 +215,12 @@ export default function LegalResearchWrapper({
         </div>
 
         {previewText && (
-          <div className="mt-8 rounded-[6px] border border-slate-200/70 bg-white px-6 py-6 shadow-[0_12px_32px_rgba(42,52,57,0.04)] dark:border-slate-700/70 dark:bg-slate-900/80 sm:px-8">
-            <div className="mb-4 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400" style={labelFont}>
+          <div className="mt-8 rounded-[6px] border border-slate-200/70 bg-white px-6 py-5 shadow-[0_12px_32px_rgba(42,52,57,0.04)] dark:border-slate-700/70 dark:bg-slate-900/80 sm:px-8">
+            <div className="mb-3 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400" style={labelFont}>
               <BookText className="h-3.5 w-3.5" />
               Executive summary
             </div>
-            <p className="text-[1.28rem] font-semibold italic leading-9 text-slate-900 dark:text-slate-50" style={bodyFont}>
+            <p className="text-[1.12rem] font-semibold italic leading-8 text-slate-900 dark:text-slate-50" style={bodyFont}>
               {previewText}
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function LegalResearchWrapper({
         className={cn(
           'grid gap-6 px-5 py-6 sm:px-6 sm:py-8 lg:px-8',
           showSourcesPanel
-            ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(19rem,0.88fr)]'
+            ? 'lg:grid-cols-[minmax(0,1.62fr)_minmax(17.5rem,0.78fr)]'
             : 'lg:grid-cols-[minmax(0,1fr)]',
         )}
       >
@@ -241,9 +241,9 @@ export default function LegalResearchWrapper({
             !showSourcesPanel && 'max-w-none',
           )}
         >
-          <div className="mb-6 flex items-center gap-3">
-            <span className="h-px w-8 bg-slate-300 dark:bg-slate-600" />
-            <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400" style={headlineFont}>
+          <div className="mb-5 flex items-center gap-3">
+            <span className="h-px w-7 bg-slate-300 dark:bg-slate-600" />
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400" style={headlineFont}>
             <LibraryBig className="h-3.5 w-3.5" />
             Detailed analysis
             </div>
@@ -252,23 +252,23 @@ export default function LegalResearchWrapper({
           <div
             className={cn(
               'space-y-4 text-slate-700 dark:text-slate-200',
-              '[&_h1]:mt-10 [&_h1]:text-[2rem] [&_h1]:font-extrabold [&_h1]:leading-tight [&_h1]:tracking-[-0.04em] [&_h1]:text-slate-950 dark:[&_h1]:text-slate-50',
-              '[&_h2]:mt-9 [&_h2]:border-l-4 [&_h2]:border-slate-900 [&_h2]:pl-5 [&_h2]:text-[1.65rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-slate-900 dark:[&_h2]:border-slate-100 dark:[&_h2]:text-slate-100',
-              '[&_h3]:mt-7 [&_h3]:text-[1.08rem] [&_h3]:font-bold [&_h3]:uppercase [&_h3]:tracking-[0.12em] [&_h3]:text-slate-600 dark:[&_h3]:text-slate-300',
-              '[&_p]:text-[18px] [&_p]:leading-[1.75] [&_p]:text-slate-700 dark:[&_p]:text-slate-200',
+              '[&_h1]:mt-9 [&_h1]:text-[1.72rem] [&_h1]:font-extrabold [&_h1]:leading-tight [&_h1]:tracking-[-0.04em] [&_h1]:text-slate-950 dark:[&_h1]:text-slate-50',
+              '[&_h2]:mt-8 [&_h2]:border-l-4 [&_h2]:border-slate-900 [&_h2]:pl-4 [&_h2]:text-[1.4rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-slate-900 dark:[&_h2]:border-slate-100 dark:[&_h2]:text-slate-100',
+              '[&_h3]:mt-6 [&_h3]:text-[0.94rem] [&_h3]:font-bold [&_h3]:uppercase [&_h3]:tracking-[0.11em] [&_h3]:text-slate-600 dark:[&_h3]:text-slate-300',
+              '[&_p]:text-[16px] [&_p]:leading-[1.68] [&_p]:text-slate-700 dark:[&_p]:text-slate-200',
               '[&_strong]:font-semibold [&_strong]:text-slate-900 dark:[&_strong]:text-slate-50',
               '[&_em]:text-slate-600 dark:[&_em]:text-slate-300',
-              '[&_ul]:my-5 [&_ul]:space-y-2.5 [&_ul]:pl-5',
-              '[&_ol]:my-5 [&_ol]:space-y-2.5 [&_ol]:pl-5',
-              '[&_li]:text-[18px] [&_li]:leading-[1.75]',
-              '[&_blockquote]:my-6 [&_blockquote]:border-l-2 [&_blockquote]:border-[#4c56af] [&_blockquote]:bg-[#f0f4f7] [&_blockquote]:px-6 [&_blockquote]:py-6 [&_blockquote]:italic [&_blockquote]:text-slate-800 dark:[&_blockquote]:border-[#929bfa] dark:[&_blockquote]:bg-slate-800/80 dark:[&_blockquote]:text-slate-100',
-              '[&_table]:my-8 [&_table]:w-full [&_table]:border-collapse',
+              '[&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5',
+              '[&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5',
+              '[&_li]:text-[16px] [&_li]:leading-[1.68]',
+              '[&_blockquote]:my-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#4c56af] [&_blockquote]:bg-[#f0f4f7] [&_blockquote]:px-5 [&_blockquote]:py-5 [&_blockquote]:italic [&_blockquote]:text-slate-800 dark:[&_blockquote]:border-[#929bfa] dark:[&_blockquote]:bg-slate-800/80 dark:[&_blockquote]:text-slate-100',
+              '[&_table]:my-6 [&_table]:w-full [&_table]:border-collapse',
               '[&_thead]:bg-[#e1e9ee] dark:[&_thead]:bg-slate-800/80',
-              '[&_th]:px-6 [&_th]:py-4 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[0.11em] [&_th]:text-slate-900 dark:[&_th]:text-slate-100',
+              '[&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[10px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[0.11em] [&_th]:text-slate-900 dark:[&_th]:text-slate-100',
               '[&_tbody_tr]:border-t [&_tbody_tr]:border-slate-200 dark:[&_tbody_tr]:border-slate-700',
               '[&_tbody_tr:nth-child(even)]:bg-slate-50/60 dark:[&_tbody_tr:nth-child(even)]:bg-slate-800/30',
-              '[&_td]:px-6 [&_td]:py-5 [&_td]:align-top [&_td]:text-[12px] [&_td]:leading-6 [&_td]:text-slate-600 dark:[&_td]:text-slate-300',
-              '[&_td_p]:text-[17px]',
+              '[&_td]:px-4 [&_td]:py-3.5 [&_td]:align-top [&_td]:text-[11px] [&_td]:leading-5 [&_td]:text-slate-600 dark:[&_td]:text-slate-300',
+              '[&_td_p]:text-[15px]',
               '[&_code]:rounded-md [&_code]:bg-slate-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[13px] dark:[&_code]:bg-slate-800',
               '[&_hr]:my-6 [&_hr]:border-slate-200 dark:[&_hr]:border-slate-700',
             )}
@@ -300,31 +300,37 @@ export default function LegalResearchWrapper({
         </section>
 
         {showSourcesPanel ? (
-          <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-            <div className="rounded-[6px] border border-slate-200/80 bg-white p-5 shadow-[0_12px_32px_rgba(42,52,57,0.04)] dark:border-slate-700/70 dark:bg-slate-900/82 sm:p-6">
-              <div className="mb-6 flex items-start gap-3">
-                <div className="rounded-sm border border-slate-200 bg-slate-50 p-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
-                  <Scale className="h-4 w-4" />
+          <aside className="min-w-0 lg:sticky lg:top-3 lg:self-start">
+            <div className="rounded-[6px] border border-slate-200/80 bg-white p-4 shadow-[0_12px_32px_rgba(42,52,57,0.04)] dark:border-slate-700/70 dark:bg-slate-900/82 sm:p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <div className="rounded-sm border border-slate-200 bg-slate-50 p-1.5 text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
+                  <Scale className="h-3.5 w-3.5" />
                 </div>
                 <div>
                   <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500" style={labelFont}>
                     Citation Library
                   </p>
-                  <h4 className="text-[1.15rem] font-bold tracking-[-0.02em] text-slate-950 dark:text-slate-50" style={headlineFont}>
+                  <h4 className="text-[1rem] font-bold tracking-[-0.02em] text-slate-950 dark:text-slate-50" style={headlineFont}>
                     Authorities & sources
                   </h4>
-                  <p className="mt-1 text-[13px] leading-6 text-slate-600 dark:text-slate-300" style={bodyFont}>
+                  <p className="mt-1 text-[12px] leading-5 text-slate-600 dark:text-slate-300" style={bodyFont}>
                     Review supporting links, files, and cited materials used in this response.
                   </p>
                 </div>
               </div>
               <div
                 className={cn(
-                  'min-w-0',
-                  '[&_[role=tablist]]:mb-4 [&_[role=tablist]]:gap-2 [&_[role=tablist]]:border-none',
-                  '[&_[role=tab]]:rounded-sm [&_[role=tab]]:border [&_[role=tab]]:border-slate-200 [&_[role=tab]]:bg-slate-50 [&_[role=tab]]:px-3 [&_[role=tab]]:py-1.5 [&_[role=tab]]:text-[11px] [&_[role=tab]]:font-medium [&_[role=tab]]:uppercase [&_[role=tab]]:tracking-[0.12em] [&_[role=tab]]:text-slate-600 dark:[&_[role=tab]]:border-slate-700 dark:[&_[role=tab]]:bg-slate-800/60 dark:[&_[role=tab]]:text-slate-300',
+                  'min-w-0 max-h-[72vh] overflow-y-auto pr-1',
+                  '[&_[role=region]]:min-w-0',
+                  '[&_[role=tablist]]:mb-3 [&_[role=tablist]]:gap-1.5 [&_[role=tablist]]:border-none',
+                  '[&_[role=tab]]:rounded-sm [&_[role=tab]]:border [&_[role=tab]]:border-slate-200 [&_[role=tab]]:bg-slate-50 [&_[role=tab]]:px-2.5 [&_[role=tab]]:py-1 [&_[role=tab]]:text-[10px] [&_[role=tab]]:font-medium [&_[role=tab]]:uppercase [&_[role=tab]]:tracking-[0.12em] [&_[role=tab]]:text-slate-600 dark:[&_[role=tab]]:border-slate-700 dark:[&_[role=tab]]:bg-slate-800/60 dark:[&_[role=tab]]:text-slate-300',
                   '[&_[role=tab][data-state=active]]:border-slate-900 [&_[role=tab][data-state=active]]:bg-slate-900 [&_[role=tab][data-state=active]]:text-white dark:[&_[role=tab][data-state=active]]:border-slate-200 dark:[&_[role=tab][data-state=active]]:bg-slate-100 dark:[&_[role=tab][data-state=active]]:text-slate-900',
-                  '[&_a]:rounded-[4px] [&_a]:border [&_a]:border-slate-200 [&_a]:bg-slate-50/70 [&_a]:shadow-none hover:[&_a]:border-slate-300 hover:[&_a]:bg-white dark:[&_a]:border-slate-700 dark:[&_a]:bg-slate-800/50 dark:hover:[&_a]:border-slate-600 dark:hover:[&_a]:bg-slate-800/80',
+                  '[&_.scrollbar-none.grid]:grid-cols-1 [&_.scrollbar-none.grid]:gap-2 sm:[&_.scrollbar-none.grid]:grid-cols-2 lg:[&_.scrollbar-none.grid]:grid-cols-1',
+                  '[&_a]:rounded-[4px] [&_a]:border [&_a]:border-slate-200 [&_a]:bg-slate-50/70 [&_a]:px-2.5 [&_a]:py-2 [&_a]:shadow-none hover:[&_a]:border-slate-300 hover:[&_a]:bg-white dark:[&_a]:border-slate-700 dark:[&_a]:bg-slate-800/50 dark:hover:[&_a]:border-slate-600 dark:hover:[&_a]:bg-slate-800/80',
+                  '[&_button]:rounded-[4px] [&_button]:border [&_button]:border-slate-200 [&_button]:bg-slate-50/70 [&_button]:px-2.5 [&_button]:py-2 dark:[&_button]:border-slate-700 dark:[&_button]:bg-slate-800/50',
+                  '[&_a_span]:leading-5 [&_button_span]:leading-5',
+                  '[&_a_.line-clamp-2]:text-[12px] [&_button_.line-clamp-2]:text-[12px]',
+                  '[&_a_.text-xs]:text-[10px] [&_button_.text-xs]:text-[10px]',
                 )}
                 style={labelFont}
               >
