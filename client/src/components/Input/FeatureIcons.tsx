@@ -2,6 +2,11 @@ import { memo } from 'react';
 import { useRecoilValue } from 'recoil';
 import { FileText, Scale, FileSignature } from 'lucide-react';
 import { useGetEndpointsQuery } from '~/data-provider';
+import {
+  CONTRACT_REVIEW_LABEL,
+  resolveContractReviewEndpointName,
+} from '~/features/agents/contract-review';
+import { resolveWillsEndpointName, WILLS_DESCRIPTION, WILLS_LABEL } from '~/features/agents/wills';
 import { cn } from '~/utils';
 import store from '~/store';
 
@@ -17,16 +22,19 @@ interface FeatureIcon {
 const FeatureIcons = memo(() => {
   const { data: endpointsConfig } = useGetEndpointsQuery();
   const conversation = useRecoilValue(store.conversationByIndex(0)) || {};
+  const endpoints = endpointsConfig?.endpoints;
+  const willsEndpoint = resolveWillsEndpointName(endpoints);
+  const contractReviewEndpoint = resolveContractReviewEndpointName(endpoints);
 
   // Parse feature icons from LibreChat.yaml configuration
   const featureIcons: FeatureIcon[] = [
     {
       id: 'willgen',
-      label: 'WillGen',
+      label: WILLS_LABEL,
       icon: FileSignature,
-      endpoint: 'WillGen',
-      description: 'Generate legal wills and estate documents',
-      enabled: endpointsConfig?.endpoints?.some((e) => e.name === 'WillGen') || false,
+      endpoint: willsEndpoint ?? '',
+      description: WILLS_DESCRIPTION,
+      enabled: Boolean(willsEndpoint),
     },
     {
       id: 'docgen',
@@ -38,11 +46,11 @@ const FeatureIcons = memo(() => {
     },
     {
       id: 'legalcontract',
-      label: 'Contract',
+      label: CONTRACT_REVIEW_LABEL,
       icon: Scale,
-      endpoint: 'LegalContract',
+      endpoint: contractReviewEndpoint ?? '',
       description: 'Review and analyze legal contracts',
-      enabled: endpointsConfig?.endpoints?.some((e) => e.name === 'LegalContract') || false,
+      enabled: Boolean(contractReviewEndpoint),
     },
   ];
 

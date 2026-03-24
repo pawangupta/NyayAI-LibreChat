@@ -5,16 +5,9 @@ import { BirthdayIcon, TooltipAnchor, SplitText } from '@librechat/client';
 import { useChatContext, useAgentsMapContext, useAssistantsMapContext } from '~/Providers';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
 import ConvoIcon from '~/components/Endpoints/ConvoIcon';
+import { NYAY_ENDPOINTS, NYAY_ENDPOINT_LABELS } from '~/features/agents/shared/nyayAgentRegistry';
 import { useLocalize, useAuthContext } from '~/hooks';
 import { getIconEndpoint, getEntity } from '~/utils';
-
-const NYAY_ENDPOINTS = new Set(['Drafting Assistant', 'Contract Review', 'Legal Research']);
-
-const NYAY_ENDPOINT_LABELS: Record<string, string> = {
-  'Drafting Assistant': 'Drafting Assistant',
-  'Contract Review': 'Contract Review',
-  'Legal Research': 'Legal Research',
-};
 
 const containerClassName =
   'shadow-stroke relative flex h-full items-center justify-center rounded-full bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none ';

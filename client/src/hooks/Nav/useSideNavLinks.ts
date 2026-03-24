@@ -26,8 +26,8 @@ import PromptsAccordion from '~/components/Prompts/PromptsAccordion';
 import Parameters from '~/components/SidePanel/Parameters/Panel';
 import FilesPanel from '~/components/SidePanel/Files/Panel';
 import MCPPanel from '~/components/SidePanel/MCP/MCPPanel';
-import WillPreviewPanel from '~/components/SidePanel/WillPreview/Panel';
 import { useGetStartupConfig } from '~/data-provider';
+import { isWillsEndpointName, WillPreviewPanel } from '~/features/agents/wills';
 import { useHasAccess } from '~/hooks';
 
 export default function useSideNavLinks({
@@ -142,7 +142,7 @@ export default function useSideNavLinks({
       });
     }
 
-    if (endpoint === 'WillGen') {
+    if (isWillsEndpointName(endpoint)) {
       links.push({
         title: 'Will Preview',
         label: '',

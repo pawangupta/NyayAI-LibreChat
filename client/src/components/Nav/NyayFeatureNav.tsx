@@ -14,59 +14,13 @@
 import { useState, useCallback, memo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetEndpointsQuery } from '~/data-provider';
+import {
+  NYAY_NAV_CONFIG,
+  type NavItem,
+  type NavSection,
+} from '~/features/agents/shared/nyayAgentRegistry';
 import { useNewConvo } from '~/hooks';
 import { cn } from '~/utils';
-
-interface NavItem {
-  label: string;
-  endpointName: string;
-  model: string;
-}
-
-interface NavSection {
-  sectionLabel: string;
-  iconPath: string;
-  items: NavItem[];
-}
-
-const NYAY_NAV_CONFIG: NavSection[] = [
-  {
-    sectionLabel: 'Drafting',
-    iconPath:
-      'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
-    items: [
-      {
-        label: 'Drafting Assistant',
-        endpointName: 'Drafting Assistant',
-        model: 'Will Drafting Assistant',
-      },
-    ],
-  },
-  {
-    sectionLabel: 'Contract Review',
-    iconPath:
-      'M20 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L11 14.17l7.59-7.59L20 8l-9 9z',
-    items: [
-      {
-        label: 'Contract Review',
-        endpointName: 'Contract Review',
-        model: 'Tabular Contract Review',
-      },
-    ],
-  },
-  {
-    sectionLabel: 'Legal Research',
-    iconPath:
-      'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
-    items: [
-      {
-        label: 'Legal Research',
-        endpointName: 'Legal Research',
-        model: 'Legal Research Assistant',
-      },
-    ],
-  },
-];
 
 function loadOpenGroups(): Record<string, boolean> {
   try {

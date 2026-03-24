@@ -6,26 +6,14 @@ import { useDeleteFilesMutation } from '~/data-provider';
 import DragDropWrapper from '~/components/Chat/Input/Files/DragDropWrapper';
 import { EditorProvider, SidePanelProvider, ArtifactsProvider, useChatContext } from '~/Providers';
 import Artifacts from '~/components/Artifacts/Artifacts';
-import WillPreviewPanel from '~/components/SidePanel/WillPreview/Panel';
+import {
+  isWillDraftingConversation,
+  useWillDownloadUrl,
+  WillPreviewPanel,
+} from '~/features/agents/wills';
 import { SidePanelGroup } from '~/components/SidePanel';
 import { useSetFilesToDelete } from '~/hooks';
-import { useWillDownloadUrl } from '~/hooks/useWillDownloadUrl';
 import store from '~/store';
-
-const WILL_DRAFTING_MODEL = 'Will Drafting Assistant';
-const WILL_DRAFTING_LABEL = 'Drafting Assistant';
-
-function isWillDraftingConvo(
-  conversation: { model?: string | null; chatGptLabel?: string | null; endpoint?: string | null } | undefined | null,
-): boolean {
-  if (!conversation) return false;
-  return (
-    conversation.endpoint === WILL_DRAFTING_LABEL ||
-    conversation.model === WILL_DRAFTING_MODEL ||
-    conversation.chatGptLabel === WILL_DRAFTING_LABEL ||
-    conversation.chatGptLabel === WILL_DRAFTING_MODEL
-  );
-}
 
 export default function Presentation({ children }: { children: React.ReactNode }) {
   const artifacts = useRecoilValue(store.artifactsState);
@@ -33,7 +21,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
   const { conversation } = useChatContext();
 
   // Detect Will Drafting conversation and look for generated download URL
-  const isWillConvo = isWillDraftingConvo(conversation);
+  const isWillConvo = isWillDraftingConversation(conversation);
   const convId = (isWillConvo ? conversation?.conversationId : '') ?? '';
   const willDownloadUrl = useWillDownloadUrl(convId);
 
