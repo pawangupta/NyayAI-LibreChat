@@ -56,7 +56,9 @@ export default function Header() {
               !isSmallScreen ? 'transition-all duration-200 ease-in-out' : ''
             } ${!navVisible ? 'translate-x-0' : 'translate-x-[-100px]'}`}
           >
-            <ModelSelector startupConfig={startupConfig} />
+            <div className="hidden" aria-hidden="true">
+              <ModelSelector startupConfig={startupConfig} />
+            </div>
             {interfaceConfig.presets === true && interfaceConfig.modelSelect && <PresetsMenu />}
             {hasAccessToBookmarks === true && <BookmarkMenu />}
             {hasAccessToMultiConvo === true && <AddMultiConvo />}

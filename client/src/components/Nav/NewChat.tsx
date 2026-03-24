@@ -7,6 +7,7 @@ import type { TMessage } from 'librechat-data-provider';
 import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache } from '~/utils';
 import store from '~/store';
+import BrandLink from './BrandLink';
 
 export default function NewChat({
   index = 0,
@@ -49,15 +50,7 @@ export default function NewChat({
     <>
       <div className="flex items-center py-[2px] md:py-2">
         <div className="flex flex-1 items-center gap-2 pl-1">
-          <div className="nyay-logo-badge flex-shrink-0 overflow-hidden rounded-lg">
-            <img
-              src="/assets/NyayAI_Dark.png"
-              alt="NyayAI"
-              className="h-8 w-8 object-cover"
-              draggable={false}
-            />
-          </div>
-          <span className="nyay-wordmark text-sm font-semibold text-text-primary">NyayAI</span>
+          <BrandLink />
         </div>
 
         <div className="flex items-center gap-0.5">

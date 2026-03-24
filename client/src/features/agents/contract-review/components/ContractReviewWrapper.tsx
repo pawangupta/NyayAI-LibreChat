@@ -303,53 +303,53 @@ function ProgressPhaseIcon({
 function ContractProgressTimeline({ progress }: { progress: ContractProgressData }) {
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap gap-2.5 border-b border-stone-200/80 pb-5 dark:border-slate-700/80">
+      <div className="flex flex-wrap gap-2.5 border-b border-stone-200/80 pb-5 dark:border-white/7">
         {progress.pages != null ? (
-          <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" style={labelFont}>
+          <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-white/10 dark:bg-[#1d1a16] dark:text-[#b9b09f]" style={labelFont}>
             {progress.pages} pages
           </span>
         ) : null}
         {progress.characters != null ? (
-          <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" style={labelFont}>
+          <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-white/10 dark:bg-[#1d1a16] dark:text-[#b9b09f]" style={labelFont}>
             {progress.characters.toLocaleString()} chars
           </span>
         ) : null}
         {progress.clauses != null ? (
-          <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" style={labelFont}>
+          <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-white/10 dark:bg-[#1d1a16] dark:text-[#b9b09f]" style={labelFont}>
             {progress.clauses} clauses
           </span>
         ) : null}
         {progress.reviewMode ? (
-          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300" style={labelFont}>
+          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-indigo-700 dark:border-[#c9a85c]/35 dark:bg-[#241f18] dark:text-[#d7bf86]" style={labelFont}>
             {progress.reviewMode}
           </span>
         ) : null}
         {progress.confidence != null ? (
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" style={labelFont}>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-700 dark:border-[#4d6a4b] dark:bg-[#182018] dark:text-[#a5c99c]" style={labelFont}>
             {progress.confidence}% confidence
           </span>
         ) : null}
       </div>
 
       <div className="relative">
-        <div className="absolute bottom-0 left-[1.45rem] top-0 w-px bg-stone-200 dark:bg-slate-700" />
+        <div className="absolute bottom-0 left-[1.45rem] top-0 w-px bg-stone-200 dark:bg-white/8" />
         <div className="space-y-8">
           {progress.phases.map((phase, index) => {
             const tone =
               phase.status === 'complete'
-                ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                ? 'bg-indigo-600 text-white dark:bg-[#c9a85c] dark:text-[#1b1814]'
                 : phase.status === 'active'
-                  ? 'bg-indigo-100 text-indigo-700 ring-4 ring-indigo-50 dark:bg-indigo-950/50 dark:text-indigo-300 dark:ring-indigo-950/40'
-                  : 'bg-stone-100 text-stone-500 dark:bg-slate-800 dark:text-slate-400';
+                  ? 'bg-indigo-100 text-indigo-700 ring-4 ring-indigo-50 dark:bg-[#2a241d] dark:text-[#e0c78d] dark:ring-[#1d1813]'
+                  : 'bg-stone-100 text-stone-500 dark:bg-[#1e1b18] dark:text-[#7f786e]';
 
             const cardTone =
               phase.status === 'active'
-                ? 'border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/70 dark:bg-indigo-950/20'
-                : 'border-stone-200/80 bg-stone-50/50 dark:border-slate-700/80 dark:bg-slate-800/30';
+                ? 'border-indigo-200 bg-indigo-50/60 dark:border-[#c9a85c]/20 dark:bg-[#231f1a]'
+                : 'border-stone-200/80 bg-stone-50/50 dark:border-white/8 dark:bg-[#1d1a17]/80';
 
             return (
               <div key={phase.key} className="relative flex gap-5">
-                <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-white/70 shadow-sm dark:border-slate-900/60">
+                <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-white/70 shadow-sm dark:border-white/8 dark:bg-[#1a1714]">
                   <div className={cn('flex h-12 w-12 items-center justify-center rounded-full', tone)}>
                     <ProgressPhaseIcon status={phase.status} index={index} />
                   </div>
@@ -357,15 +357,15 @@ function ContractProgressTimeline({ progress }: { progress: ContractProgressData
 
                 <div className="min-w-0 flex-1 pt-1">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-[1.02rem] font-bold text-stone-950 dark:text-slate-50" style={headlineFont}>
+                    <h3 className="text-[1.02rem] font-bold text-stone-950 dark:text-[#f2ebde]" style={headlineFont}>
                       {phase.title}
                     </h3>
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-stone-400 dark:text-slate-500" style={labelFont}>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-stone-400 dark:text-[#80786d]" style={labelFont}>
                       {phase.status}
                     </span>
                   </div>
 
-                  <p className="mt-2 text-[15px] leading-7 text-stone-700 dark:text-slate-200" style={bodyFont}>
+                  <p className="mt-2 text-[15px] leading-7 text-stone-700 dark:text-[#cfc4b5]" style={bodyFont}>
                     {phase.summary}
                   </p>
 
@@ -380,15 +380,15 @@ function ContractProgressTimeline({ progress }: { progress: ContractProgressData
                           )}
                           style={labelFont}
                         >
-                          <span className="text-stone-700 dark:text-slate-200">{task}</span>
+                          <span className="text-stone-700 dark:text-[#d9cfbf]">{task}</span>
                           {phase.status === 'active' ? (
                             <div className="flex gap-1.5">
-                              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-indigo-500 [animation-delay:0ms]" />
-                              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-indigo-500 [animation-delay:120ms]" />
-                              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-indigo-500 [animation-delay:240ms]" />
+                              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-indigo-500 dark:bg-[#c9a85c] [animation-delay:0ms]" />
+                              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-indigo-500 dark:bg-[#c9a85c] [animation-delay:120ms]" />
+                              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-indigo-500 dark:bg-[#c9a85c] [animation-delay:240ms]" />
                             </div>
                           ) : (
-                            <Check className="h-4 w-4 text-emerald-500" />
+                            <Check className="h-4 w-4 text-emerald-500 dark:text-[#9cc18c]" />
                           )}
                         </div>
                       ))}
@@ -447,9 +447,9 @@ function getRiskTone(score: number | null) {
     return {
       label: 'Pending score',
       chipClass:
-        'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200',
+        'border-slate-300 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-[#1d1a16] dark:text-[#cfc6b8]',
       barClass: 'bg-slate-500',
-      valueClass: 'text-slate-900 dark:text-slate-50',
+      valueClass: 'text-slate-900 dark:text-[#f2ebde]',
     };
   }
 
@@ -457,9 +457,9 @@ function getRiskTone(score: number | null) {
     return {
       label: 'High risk',
       chipClass:
-        'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
+        'border-rose-200 bg-rose-50 text-rose-700 dark:border-[#6a4341] dark:bg-[#241817] dark:text-[#d8a4a0]',
       barClass: 'bg-rose-500',
-      valueClass: 'text-rose-700 dark:text-rose-300',
+      valueClass: 'text-rose-700 dark:text-[#e3aea9]',
     };
   }
 
@@ -467,18 +467,18 @@ function getRiskTone(score: number | null) {
     return {
       label: 'Moderate risk',
       chipClass:
-        'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+        'border-amber-200 bg-amber-50 text-amber-700 dark:border-[#6f5d35] dark:bg-[#241f17] dark:text-[#d9bb74]',
       barClass: 'bg-amber-500',
-      valueClass: 'text-amber-700 dark:text-amber-300',
+      valueClass: 'text-amber-700 dark:text-[#e1c57e]',
     };
   }
 
   return {
     label: 'Lower risk',
     chipClass:
-      'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+      'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-[#476345] dark:bg-[#172018] dark:text-[#a7ca9f]',
     barClass: 'bg-emerald-500',
-    valueClass: 'text-emerald-700 dark:text-emerald-300',
+    valueClass: 'text-emerald-700 dark:text-[#abd2a5]',
   };
 }
 
@@ -530,19 +530,19 @@ export default function ContractReviewWrapper({
     <div
       data-contract-review-wrapper="true"
       className={cn(
-        'my-4 overflow-hidden rounded-[18px] border border-stone-200/80 bg-[#f7f5f1] shadow-[0_20px_60px_rgba(62,56,45,0.08)] dark:border-slate-700/70 dark:bg-[#12161c]',
+        'my-4 overflow-hidden rounded-[18px] border border-stone-200/80 bg-[#f7f5f1] shadow-[0_20px_60px_rgba(62,56,45,0.08)] dark:border-white/10 dark:bg-[#1a1916] dark:shadow-[0_24px_64px_rgba(0,0,0,0.34)]',
         className,
       )}
     >
-      <div className="border-b border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,251,245,0.92),rgba(247,245,241,1))] px-6 py-8 dark:border-slate-700/70 dark:bg-[linear-gradient(180deg,rgba(18,22,28,0.98),rgba(18,22,28,1))] sm:px-8 sm:py-9">
-        <div className="border-l-4 border-stone-900 pl-6 dark:border-slate-100">
+      <div className="border-b border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,251,245,0.92),rgba(247,245,241,1))] px-6 py-8 dark:border-white/7 dark:bg-[linear-gradient(180deg,rgba(35,31,27,0.98),rgba(26,25,22,1))] sm:px-8 sm:py-9">
+        <div className="border-l-4 border-stone-900 pl-6 dark:border-[#c9a85c]">
           <p
-            className="mb-2 text-[10px] uppercase tracking-[0.24em] text-stone-500 dark:text-slate-400"
+            className="mb-2 text-[10px] uppercase tracking-[0.24em] text-stone-500 dark:text-[#8f887c]"
             style={labelFont}
           >
             Structured Contract Review
           </p>
-          <div className="flex flex-wrap items-center gap-2 text-stone-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 text-stone-500 dark:text-[#938a7c]">
             <span
               className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em]"
               style={labelFont}
@@ -564,7 +564,7 @@ export default function ContractReviewWrapper({
 
           <div className="mt-4 space-y-2.5">
             <h3
-              className="text-[1.95rem] font-extrabold leading-tight tracking-[-0.04em] text-stone-950 dark:text-slate-50 sm:text-[2.3rem]"
+              className="text-[1.95rem] font-extrabold leading-tight tracking-[-0.04em] text-stone-950 dark:text-[#f3efe5] sm:text-[2.3rem]"
               style={headlineFont}
             >
               Contract risks, clause posture, and negotiation actions
@@ -574,7 +574,7 @@ export default function ContractReviewWrapper({
 
         <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-4">
           <div>
-            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-slate-500" style={labelFont}>
+            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-[#7d766c]" style={labelFont}>
               Risk score
             </p>
             <p className={cn('text-sm font-bold', riskTone.valueClass)} style={headlineFont}>
@@ -582,26 +582,26 @@ export default function ContractReviewWrapper({
             </p>
           </div>
           <div>
-            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-slate-500" style={labelFont}>
+            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-[#7d766c]" style={labelFont}>
               Clauses
             </p>
-            <p className="text-sm font-bold text-stone-950 dark:text-slate-50" style={headlineFont}>
+            <p className="text-sm font-bold text-stone-950 dark:text-[#eee6d6]" style={headlineFont}>
               {totalClauses ?? '—'}
             </p>
           </div>
           <div>
-            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-slate-500" style={labelFont}>
+            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-[#7d766c]" style={labelFont}>
               Dimensions
             </p>
-            <p className="text-sm font-bold text-stone-950 dark:text-slate-50" style={headlineFont}>
+            <p className="text-sm font-bold text-stone-950 dark:text-[#eee6d6]" style={headlineFont}>
               {dimensions ? `${dimensions.successful}/${dimensions.total}` : '—'}
             </p>
           </div>
           <div>
-            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-slate-500" style={labelFont}>
+            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-[#7d766c]" style={labelFont}>
               Sections
             </p>
-            <p className="text-sm font-bold text-stone-950 dark:text-slate-50" style={headlineFont}>
+            <p className="text-sm font-bold text-stone-950 dark:text-[#eee6d6]" style={headlineFont}>
               {sectionCount || '—'}
             </p>
           </div>
@@ -609,10 +609,10 @@ export default function ContractReviewWrapper({
       </div>
 
       <div className="flex flex-col gap-6 px-5 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <section className="min-w-0 rounded-[6px] border border-stone-200/80 bg-white px-6 py-7 shadow-[0_12px_32px_rgba(62,56,45,0.05)] dark:border-slate-700/70 dark:bg-slate-900/82 sm:px-8 sm:py-8">
+        <section className="min-w-0 rounded-[6px] border border-stone-200/80 bg-white px-6 py-7 shadow-[0_12px_32px_rgba(62,56,45,0.05)] dark:border-white/7 dark:bg-[#24211d] dark:shadow-[0_16px_36px_rgba(0,0,0,0.18)] sm:px-8 sm:py-8">
           <div className="mb-5 flex items-center gap-3">
-            <span className="h-px w-7 bg-stone-300 dark:bg-slate-600" />
-            <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500 dark:text-slate-400" style={headlineFont}>
+            <span className="h-px w-7 bg-stone-300 dark:bg-[#c9a85c]/70" />
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500 dark:text-[#8f887c]" style={headlineFont}>
               <FileSpreadsheet className="h-3.5 w-3.5" />
               Review findings
             </div>
@@ -620,40 +620,40 @@ export default function ContractReviewWrapper({
 
           <div
             className={cn(
-              'space-y-4 text-stone-700 dark:text-slate-200',
-              '[&_h1]:mt-8 [&_h1]:text-[1.72rem] [&_h1]:font-extrabold [&_h1]:leading-tight [&_h1]:tracking-[-0.04em] [&_h1]:text-stone-950 dark:[&_h1]:text-slate-50',
-              '[&_h2]:mt-7 [&_h2]:border-l-4 [&_h2]:border-stone-900 [&_h2]:pl-4 [&_h2]:text-[1.3rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-stone-900 dark:[&_h2]:border-slate-100 dark:[&_h2]:text-slate-100',
-              '[&_h3]:mt-6 [&_h3]:text-[0.95rem] [&_h3]:font-bold [&_h3]:uppercase [&_h3]:tracking-[0.11em] [&_h3]:text-stone-600 dark:[&_h3]:text-slate-300',
-              '[&_p]:text-[15px] [&_p]:leading-[1.7] [&_p]:text-stone-700 dark:[&_p]:text-slate-200',
-              '[&_strong]:font-semibold [&_strong]:text-stone-950 dark:[&_strong]:text-slate-50',
-              '[&_em]:text-stone-600 dark:[&_em]:text-slate-300',
+              'space-y-4 text-stone-700 dark:text-[#ddd4c7]',
+              '[&_h1]:mt-8 [&_h1]:text-[1.72rem] [&_h1]:font-extrabold [&_h1]:leading-tight [&_h1]:tracking-[-0.04em] [&_h1]:text-stone-950 dark:[&_h1]:text-[#f3efe5]',
+              '[&_h2]:mt-7 [&_h2]:border-l-4 [&_h2]:border-stone-900 [&_h2]:pl-4 [&_h2]:text-[1.3rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-stone-900 dark:[&_h2]:border-[#c9a85c] dark:[&_h2]:text-[#f0e8da]',
+              '[&_h3]:mt-6 [&_h3]:text-[0.95rem] [&_h3]:font-bold [&_h3]:uppercase [&_h3]:tracking-[0.11em] [&_h3]:text-stone-600 dark:[&_h3]:text-[#a2998b]',
+              '[&_p]:text-[15px] [&_p]:leading-[1.7] [&_p]:text-stone-700 dark:[&_p]:text-[#d2c9bc]',
+              '[&_strong]:font-semibold [&_strong]:text-stone-950 dark:[&_strong]:text-[#f4ede0]',
+              '[&_em]:text-stone-600 dark:[&_em]:text-[#aea493]',
               '[&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5',
               '[&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5',
               '[&_li]:text-[15px] [&_li]:leading-[1.68]',
-              '[&_blockquote]:my-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#7c5c27] [&_blockquote]:bg-[#faf4ea] [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:italic [&_blockquote]:text-stone-800 dark:[&_blockquote]:border-[#d2b98a] dark:[&_blockquote]:bg-slate-800/80 dark:[&_blockquote]:text-slate-100',
+              '[&_blockquote]:my-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#7c5c27] [&_blockquote]:bg-[#faf4ea] [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:italic [&_blockquote]:text-stone-800 dark:[&_blockquote]:border-[#c9a85c] dark:[&_blockquote]:bg-[#1d1a17] dark:[&_blockquote]:text-[#efe6d7]',
               '[&_table]:my-6 [&_table]:w-full [&_table]:border-collapse',
-              '[&_thead]:bg-[#efe7d9] dark:[&_thead]:bg-slate-800/80',
-              '[&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[10px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[0.11em] [&_th]:text-stone-900 dark:[&_th]:text-slate-100',
-              '[&_tbody_tr]:border-t [&_tbody_tr]:border-stone-200 dark:[&_tbody_tr]:border-slate-700',
-              '[&_tbody_tr:nth-child(even)]:bg-stone-50/60 dark:[&_tbody_tr:nth-child(even)]:bg-slate-800/30',
-              '[&_td]:px-4 [&_td]:py-3.5 [&_td]:align-top [&_td]:text-[11px] [&_td]:leading-5 [&_td]:text-stone-600 dark:[&_td]:text-slate-300',
+              '[&_thead]:bg-[#efe7d9] dark:[&_thead]:bg-[#211e1a]',
+              '[&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[10px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[0.11em] [&_th]:text-stone-900 dark:[&_th]:text-[#d3c5a6]',
+              '[&_tbody_tr]:border-t [&_tbody_tr]:border-stone-200 dark:[&_tbody_tr]:border-white/7',
+              '[&_tbody_tr:nth-child(even)]:bg-stone-50/60 dark:[&_tbody_tr:nth-child(even)]:bg-[#1f1c18]',
+              '[&_td]:px-4 [&_td]:py-3.5 [&_td]:align-top [&_td]:text-[11px] [&_td]:leading-5 [&_td]:text-stone-600 dark:[&_td]:text-[#c3b9aa]',
               '[&_td_p]:text-[14px]',
-              '[&_code]:rounded-md [&_code]:bg-stone-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[12px] dark:[&_code]:bg-slate-800',
-              '[&_hr]:my-6 [&_hr]:border-stone-200 dark:[&_hr]:border-slate-700',
+              '[&_code]:rounded-md [&_code]:bg-stone-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[12px] dark:[&_code]:bg-[#1b1814] dark:[&_code]:text-[#ead9b0]',
+              '[&_hr]:my-6 [&_hr]:border-stone-200 dark:[&_hr]:border-white/7',
             )}
             style={bodyFont}
           >
             {progressData ? (
               <div className="space-y-8">
                 <ContractProgressTimeline progress={progressData} />
-                <div className="border-t border-stone-200/80 pt-8 dark:border-slate-700/80">{children}</div>
+                <div className="border-t border-stone-200/80 pt-8 dark:border-white/7">{children}</div>
               </div>
             ) : (
               children
             )}
           </div>
 
-          <div className="mt-8 rounded-[4px] border border-stone-200/80 bg-stone-50/80 px-4 py-3 text-[12px] leading-6 text-stone-500 dark:border-slate-700/70 dark:bg-slate-800/40 dark:text-slate-400">
+          <div className="mt-8 rounded-[4px] border border-stone-200/80 bg-stone-50/80 px-4 py-3 text-[12px] leading-6 text-stone-500 dark:border-white/7 dark:bg-[#1e1b18] dark:text-[#968d80]">
             <p style={labelFont}>
               Review outputs are AI-generated. Confirm clause wording, governing law, fallback
               positions, and negotiation strategy before sharing externally or relying on them.
@@ -661,11 +661,11 @@ export default function ContractReviewWrapper({
           </div>
 
           {sectionChips.length > 0 ? (
-            <div className="mt-8 flex flex-wrap gap-2.5 border-t border-stone-200 pt-6 dark:border-slate-700">
+            <div className="mt-8 flex flex-wrap gap-2.5 border-t border-stone-200 pt-6 dark:border-white/7">
               {sectionChips.map((chip) => (
                 <span
                   key={chip}
-                  className="rounded-sm border border-stone-300/80 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-sm border border-stone-300/80 bg-stone-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-600 dark:border-[#c9a85c]/30 dark:bg-[#1d1a16] dark:text-[#cfbe95]"
                   style={labelFont}
                 >
                   {chip}
@@ -679,21 +679,21 @@ export default function ContractReviewWrapper({
           <aside className="min-w-0">
             <div className="space-y-4">
               {downloadUrl ? (
-                <div className="rounded-[6px] border border-stone-200/80 bg-white p-4 shadow-[0_12px_32px_rgba(62,56,45,0.05)] dark:border-slate-700/70 dark:bg-slate-900/82 sm:p-5">
-                  <p className="mb-3 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-slate-500" style={labelFont}>
+                <div className="rounded-[6px] border border-stone-200/80 bg-white p-4 shadow-[0_12px_32px_rgba(62,56,45,0.05)] dark:border-white/7 dark:bg-[#221f1b] dark:shadow-[0_16px_36px_rgba(0,0,0,0.16)] sm:p-5">
+                  <p className="mb-3 text-[10px] uppercase tracking-[0.22em] text-stone-400 dark:text-[#7d766c]" style={labelFont}>
                     Deliverables
                   </p>
                   <a
                     href={downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-[4px] bg-stone-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-[4px] bg-stone-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 dark:bg-[#c9a85c] dark:text-[#1b1814] dark:hover:bg-[#d7b876]"
                     style={labelFont}
                   >
                     <Download className="h-4 w-4" />
                     Download Excel report
                   </a>
-                  <p className="mt-3 text-[12px] leading-5 text-stone-500 dark:text-slate-400" style={bodyFont}>
+                  <p className="mt-3 text-[12px] leading-5 text-stone-500 dark:text-[#a39a8d]" style={bodyFont}>
                     Export the clause sheet, risk matrix, precedents, and actions for offline review.
                   </p>
                 </div>
