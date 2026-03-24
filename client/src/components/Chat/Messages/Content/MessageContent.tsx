@@ -4,19 +4,21 @@ import { DelayedRender } from '@librechat/client';
 import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
 import Error from '~/components/Messages/Content/Error';
-import { SearchContext, useMessageContext } from '~/Providers';
-import { getAgentResponseLayout } from './AgentResponseLayout';
-import ContractReviewWrapper, {
+import {
+  ContractReviewWrapper,
   extractContractReviewPreview,
   extractContractReviewRawText,
   sanitizeContractReviewDisplayText,
-} from './ContractReviewWrapper';
+} from '~/features/agents/contract-review';
+import {
+  LegalResearchWrapper,
+  extractLegalResearchPreview,
+} from '~/features/agents/legal-research';
+import { SearchContext, useMessageContext } from '~/Providers';
+import { getAgentResponseLayout } from './AgentResponseLayout';
 import MarkdownLite from './MarkdownLite';
 import EditMessage from './EditMessage';
 import Thinking from './Parts/Thinking';
-import LegalResearchWrapper, {
-  extractLegalResearchPreview,
-} from './LegalResearchWrapper';
 import { useLocalize } from '~/hooks';
 import Container from './Container';
 import Markdown from './Markdown';

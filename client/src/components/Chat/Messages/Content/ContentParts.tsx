@@ -7,16 +7,18 @@ import type {
   Agents,
 } from 'librechat-data-provider';
 import { MessageContext, SearchContext } from '~/Providers';
-import MemoryArtifacts from './MemoryArtifacts';
-import type { AgentResponseLayout } from './AgentResponseLayout';
-import ContractReviewWrapper, {
+import {
+  ContractReviewWrapper,
   extractContractReviewPreview,
   extractContractReviewRawText,
   sanitizeContractReviewDisplayText,
-} from './ContractReviewWrapper';
-import LegalResearchWrapper, {
+} from '~/features/agents/contract-review';
+import {
+  LegalResearchWrapper,
   extractLegalResearchPreview,
-} from './LegalResearchWrapper';
+} from '~/features/agents/legal-research';
+import MemoryArtifacts from './MemoryArtifacts';
+import type { AgentResponseLayout } from './AgentResponseLayout';
 import Sources from '~/components/Web/Sources';
 import { mapAttachments } from '~/utils/map';
 import { EditTextPart } from './Parts';

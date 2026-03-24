@@ -1,5 +1,5 @@
-import { isContractReviewResponse } from './ContractReviewWrapper';
-import { isLegalResearchResponse } from './LegalResearchWrapper';
+import { isContractReviewResponse } from '~/features/agents/contract-review';
+import { isLegalResearchResponse } from '~/features/agents/legal-research';
 
 export type AgentResponseLayout = 'legal-research' | 'contract-review';
 

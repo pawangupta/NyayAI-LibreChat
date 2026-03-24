@@ -9,16 +9,18 @@ import type {
   SearchResultData,
   TMessageContentParts,
 } from 'librechat-data-provider';
-import { getAgentResponseLayout } from './AgentResponseLayout';
-import ContractReviewWrapper, {
+import {
+  ContractReviewWrapper,
   extractContractReviewPreview,
   extractContractReviewRawText,
   sanitizeContractReviewDisplayText,
-} from './ContractReviewWrapper';
-import { UnfinishedMessage } from './MessageContent';
-import LegalResearchWrapper, {
+} from '~/features/agents/contract-review';
+import {
+  LegalResearchWrapper,
   extractLegalResearchPreview,
-} from './LegalResearchWrapper';
+} from '~/features/agents/legal-research';
+import { getAgentResponseLayout } from './AgentResponseLayout';
+import { UnfinishedMessage } from './MessageContent';
 import Sources from '~/components/Web/Sources';
 import { cn, mapAttachments } from '~/utils';
 import { SearchContext } from '~/Providers';
