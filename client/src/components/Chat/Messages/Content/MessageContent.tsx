@@ -14,6 +14,7 @@ import {
   LegalResearchWrapper,
   extractLegalResearchPreview,
 } from '~/features/agents/legal-research';
+import { DocDraftingWrapper, extractDocDraftingPreview } from '~/features/agents/doc-drafting';
 import { SearchContext, useMessageContext } from '~/Providers';
 import { getAgentResponseLayout } from './AgentResponseLayout';
 import MarkdownLite from './MarkdownLite';
@@ -196,6 +197,10 @@ const MessageContent = ({
       return extractContractReviewPreview({ fallbackText: regularContent });
     }
 
+    if (agentResponseLayout === 'doc-drafting') {
+      return extractDocDraftingPreview({ fallbackText: regularContent });
+    }
+
     return '';
   }, [regularContent, agentResponseLayout]);
   const contractRawText = useMemo(
@@ -256,6 +261,14 @@ const MessageContent = ({
         <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
           {displayContent}
         </ContractReviewWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  if (agentResponseLayout === 'doc-drafting') {
+    return (
+      <SearchContext.Provider value={{}}>
+        <DocDraftingWrapper previewText={previewText}>{displayContent}</DocDraftingWrapper>
       </SearchContext.Provider>
     );
   }

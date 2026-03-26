@@ -17,6 +17,7 @@ import {
   LegalResearchWrapper,
   extractLegalResearchPreview,
 } from '~/features/agents/legal-research';
+import { DocDraftingWrapper, extractDocDraftingPreview } from '~/features/agents/doc-drafting';
 import MemoryArtifacts from './MemoryArtifacts';
 import type { AgentResponseLayout } from './AgentResponseLayout';
 import Sources from '~/components/Web/Sources';
@@ -96,6 +97,10 @@ const ContentParts = memo(
 
       if (agentResponseLayout === 'contract-review') {
         return extractContractReviewPreview({ content });
+      }
+
+      if (agentResponseLayout === 'doc-drafting') {
+        return extractDocDraftingPreview({ content });
       }
 
       return '';
@@ -208,6 +213,8 @@ const ContentParts = memo(
           <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
             {mainContent}
           </ContractReviewWrapper>
+        ) : agentResponseLayout === 'doc-drafting' ? (
+          <DocDraftingWrapper previewText={previewText}>{mainContent}</DocDraftingWrapper>
         ) : (
           <>
             <MemoryArtifacts attachments={attachments} />

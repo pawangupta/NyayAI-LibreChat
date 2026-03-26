@@ -6,6 +6,11 @@ import {
   CONTRACT_REVIEW_LABEL,
   resolveContractReviewEndpointName,
 } from '~/features/agents/contract-review';
+import {
+  DOC_DRAFTING_DESCRIPTION,
+  DOC_DRAFTING_LABEL,
+  resolveDocDraftingEndpointName,
+} from '~/features/agents/doc-drafting';
 import { resolveWillsEndpointName, WILLS_DESCRIPTION, WILLS_LABEL } from '~/features/agents/wills';
 import { cn } from '~/utils';
 import store from '~/store';
@@ -24,6 +29,7 @@ const FeatureIcons = memo(() => {
   const conversation = useRecoilValue(store.conversationByIndex(0)) || {};
   const endpoints = endpointsConfig?.endpoints;
   const willsEndpoint = resolveWillsEndpointName(endpoints);
+  const docDraftingEndpoint = resolveDocDraftingEndpointName(endpoints);
   const contractReviewEndpoint = resolveContractReviewEndpointName(endpoints);
 
   // Parse feature icons from LibreChat.yaml configuration
@@ -37,12 +43,12 @@ const FeatureIcons = memo(() => {
       enabled: Boolean(willsEndpoint),
     },
     {
-      id: 'docgen',
-      label: 'DocGen',
+      id: 'doc-drafting',
+      label: DOC_DRAFTING_LABEL,
       icon: FileText,
-      endpoint: 'DocGen',
-      description: 'Generate legal documents and contracts',
-      enabled: endpointsConfig?.endpoints?.some((e) => e.name === 'DocGen') || false,
+      endpoint: docDraftingEndpoint ?? '',
+      description: DOC_DRAFTING_DESCRIPTION,
+      enabled: Boolean(docDraftingEndpoint),
     },
     {
       id: 'legalcontract',

@@ -12,6 +12,7 @@ import lang from './language';
 import settings from './settings';
 import misc from './misc';
 import isTemporary from './temporary';
+import drafting from './drafting';
 export * from './agents';
 export * from './mcp';
 
@@ -29,5 +30,6 @@ export default {
   ...lang,
   ...settings,
   ...misc,
+  ...drafting,
   ...isTemporary,
 };

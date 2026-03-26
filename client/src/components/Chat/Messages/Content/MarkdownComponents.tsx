@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useRef, useEffect } from 'react';
+import { FileSearch, Gavel, Scale } from 'lucide-react';
 import { useRecoilValue } from 'recoil';
 import { useToastContext } from '@librechat/client';
 import { PermissionTypes, Permissions, dataService } from 'librechat-data-provider';
@@ -158,3 +159,175 @@ type TParagraphProps = {
 export const p: React.ElementType = memo(({ children }: TParagraphProps) => {
   return <p className="mb-2 whitespace-pre-wrap">{children}</p>;
 });
+
+type THeadingProps = React.HTMLAttributes<HTMLHeadingElement> & {
+  children: React.ReactNode;
+};
+
+function extractHeadingText(children: React.ReactNode): string {
+  if (typeof children === 'string' || typeof children === 'number') {
+    return String(children);
+  }
+
+  if (Array.isArray(children)) {
+    return children.map(extractHeadingText).join('');
+  }
+
+  if (React.isValidElement(children)) {
+    return extractHeadingText(children.props.children);
+  }
+
+  return '';
+}
+
+function normalizeHeadingText(text: string): string {
+  return text.replace(/^[^\p{L}\p{N}]+/u, '').replace(/\s+/g, ' ').trim();
+}
+
+function BrandHeadingIcon() {
+  return (
+    <span className="mr-3 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md align-[-0.18em] shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+      <img
+        src="/assets/NyayAI.svg"
+        alt=""
+        aria-hidden="true"
+        className="h-full w-full object-cover dark:hidden"
+        draggable={false}
+      />
+      <img
+        src="/assets/NyayAI_Dark.png"
+        alt=""
+        aria-hidden="true"
+        className="hidden h-full w-full object-cover dark:block"
+        draggable={false}
+      />
+    </span>
+  );
+}
+
+function SectionHeadingIcon({
+  type,
+}: {
+  type:
+    | 'issues'
+    | 'case-law'
+    | 'executive-summary'
+    | 'recommendations'
+    | 'clause-preview'
+    | 'comprehensive-report';
+}) {
+  const Icon =
+    type === 'issues' || type === 'clause-preview' || type === 'comprehensive-report'
+      ? FileSearch
+      : type === 'case-law'
+        ? Scale
+        : Gavel;
+
+  return (
+    <span className="mr-2 inline-flex align-[-0.14em] text-[#214e6a] dark:text-[#d4b46b]">
+      <Icon className="h-[1.05em] w-[1.05em]" strokeWidth={2.1} />
+    </span>
+  );
+}
+
+function renderHeading(
+  Tag: 'h1' | 'h2',
+  { children, className, ...props }: THeadingProps,
+) {
+  const rawText = extractHeadingText(children);
+  const text = normalizeHeadingText(rawText);
+
+  if (text === 'NyayAI Legal Research Report') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <BrandHeadingIcon />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'Legal Issues Identified') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <SectionHeadingIcon type="issues" />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'Case Law') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <SectionHeadingIcon type="case-law" />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'NyayAI Contract Review Report' || text === 'Contract Review Report') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <BrandHeadingIcon />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'Executive Summary') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <SectionHeadingIcon type="executive-summary" />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'Key Recommendations') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <SectionHeadingIcon type="recommendations" />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'Clause Preview') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <SectionHeadingIcon type="clause-preview" />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  if (text === 'Comprehensive Report') {
+    return (
+      <Tag className={className} {...props}>
+        <span className="inline-flex items-center">
+          <SectionHeadingIcon type="comprehensive-report" />
+          <span>{text}</span>
+        </span>
+      </Tag>
+    );
+  }
+
+  return React.createElement(Tag, { className, ...props }, children);
+}
+
+export const h1: React.ElementType = memo((props: THeadingProps) => renderHeading('h1', props));
+
+export const h2: React.ElementType = memo((props: THeadingProps) => renderHeading('h2', props));

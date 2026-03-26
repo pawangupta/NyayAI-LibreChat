@@ -2,11 +2,12 @@ type EndpointLike = { name: string };
 
 const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? '';
 
-export const WILLS_PRIMARY_ENDPOINT = 'Drafting Assistant';
-export const WILLS_ENDPOINT_ALIASES = ['Drafting Assistant', 'WillGen', 'Will Creator AI'] as const;
+export const WILLS_PRIMARY_ENDPOINT = 'Wills Drafting';
+export const WILLS_ENDPOINT_ALIASES =
+  ['Wills Drafting', 'Drafting Assistant', 'WillGen', 'Will Creator AI'] as const;
 export const WILLS_PRIMARY_MODEL = 'Will Drafting Assistant';
 export const WILLS_MODEL_ALIASES = ['Will Drafting Assistant', 'Will Creator AI'] as const;
-export const WILLS_LABEL = 'Drafting Assistant';
+export const WILLS_LABEL = 'Wills Drafting';
 export const WILLS_NAV_SECTION = 'Drafting';
 export const WILLS_DESCRIPTION = 'Generate legal wills and estate documents';
 

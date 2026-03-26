@@ -22,8 +22,8 @@ registration:
 endpoints:
   custom:
 
-    # ── Drafting Assistant ─────────────────────────────────────────────────────
-    - name: "Drafting Assistant"
+    # ── Wills Drafting ─────────────────────────────────────────────────────────
+    - name: "Wills Drafting"
       apiKey: "sk-will-backend-key-12345"
       baseURL: "http://willgen-api:8000/api"
       headers:
@@ -46,6 +46,57 @@ endpoints:
       addParams:
         max_tokens: 2000
         temperature: 0.7
+      description: "Generate legal wills and estate documents"
+      greeting: |
+        👋 Welcome to Wills Drafting!
+
+        I can help you create wills and estate planning documents.
+
+        **Quick Commands:**
+        - Ask: **"Draft a will for me"**
+        - Ask: **"Update this will clause"**
+        - Ask: **"Summarize the beneficiaries and assets"**
+
+        📄 Start with your drafting instructions or upload supporting details.
+
+
+    # ── Drafting Assistant ─────────────────────────────────────────────────────
+    - name: "Drafting Assistant"
+      apiKey: "drafting-assistant-dev-key"
+      baseURL: "http://host.docker.internal:8004/v1"
+      headers:
+        X-LibreChat-Session: '{{LIBRECHAT_BODY_CONVERSATIONID}}'
+      models:
+        default: ["Structured Drafting Assistant"]
+        fetch: false
+      modelDisplayLabel: "Structured Drafting Assistant"
+      group: "Drafting"
+      titleConvo: true
+      titleModel: "Structured Drafting Assistant"
+      summarize: false
+      forcePrompt: false
+      dropParams:
+        - user
+        - frequency_penalty
+        - presence_penalty
+        - top_p
+        - stop
+      addParams:
+        max_tokens: 4096
+        temperature: 0.2
+      description: "Structured legal document drafting with template-guided validation and draft generation"
+      greeting: |
+        👋 Welcome to the Drafting Assistant!
+
+        I can guide you through structured legal drafting workflows.
+
+        **Workflow:**
+        - Select a document type
+        - Review template requirements
+        - Validate uploaded drafting inputs
+        - Generate and revise a draft
+
+        📑 Affidavit drafting is enabled first, with more document types coming soon.
 
 
     # ── Contract Review ────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ import {
   LegalResearchWrapper,
   extractLegalResearchPreview,
 } from '~/features/agents/legal-research';
+import { DocDraftingWrapper, extractDocDraftingPreview } from '~/features/agents/doc-drafting';
 import { getAgentResponseLayout } from './AgentResponseLayout';
 import { UnfinishedMessage } from './MessageContent';
 import Sources from '~/components/Web/Sources';
@@ -55,6 +56,10 @@ const SearchContent = ({
 
     if (agentResponseLayout === 'contract-review') {
       return extractContractReviewPreview({ content: message.content, fallbackText: message.text || '' });
+    }
+
+    if (agentResponseLayout === 'doc-drafting') {
+      return extractDocDraftingPreview({ content: message.content, fallbackText: message.text || '' });
     }
 
     return '';
@@ -140,6 +145,8 @@ const SearchContent = ({
           <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
             {renderedParts}
           </ContractReviewWrapper>
+        ) : agentResponseLayout === 'doc-drafting' ? (
+          <DocDraftingWrapper previewText={previewText}>{renderedParts}</DocDraftingWrapper>
         ) : (
           <>
             <Sources />
@@ -183,6 +190,14 @@ const SearchContent = ({
         <ContractReviewWrapper previewText={previewText} rawText={contractRawText}>
           {markdownContent}
         </ContractReviewWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  if (agentResponseLayout === 'doc-drafting') {
+    return (
+      <SearchContext.Provider value={{ searchResults }}>
+        <DocDraftingWrapper previewText={previewText}>{markdownContent}</DocDraftingWrapper>
       </SearchContext.Provider>
     );
   }

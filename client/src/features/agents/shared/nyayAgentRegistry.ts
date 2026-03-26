@@ -16,6 +16,11 @@ import {
   WILLS_PRIMARY_ENDPOINT,
   WILLS_PRIMARY_MODEL,
 } from '../wills/config';
+import {
+  DOC_DRAFTING_LABEL,
+  DOC_DRAFTING_PRIMARY_ENDPOINT,
+  DOC_DRAFTING_PRIMARY_MODEL,
+} from '../doc-drafting/config';
 
 export interface NavItem {
   label: string;
@@ -39,6 +44,11 @@ export const NYAY_NAV_CONFIG: NavSection[] = [
         label: WILLS_LABEL,
         endpointName: WILLS_PRIMARY_ENDPOINT,
         model: WILLS_PRIMARY_MODEL,
+      },
+      {
+        label: DOC_DRAFTING_LABEL,
+        endpointName: DOC_DRAFTING_PRIMARY_ENDPOINT,
+        model: DOC_DRAFTING_PRIMARY_MODEL,
       },
     ],
   },
@@ -70,6 +80,7 @@ export const NYAY_NAV_CONFIG: NavSection[] = [
 
 export const NYAY_ENDPOINT_LABELS: Record<string, string> = {
   [WILLS_PRIMARY_ENDPOINT]: WILLS_LABEL,
+  [DOC_DRAFTING_PRIMARY_ENDPOINT]: DOC_DRAFTING_LABEL,
   [CONTRACT_REVIEW_PRIMARY_ENDPOINT]: CONTRACT_REVIEW_LABEL,
   [LEGAL_RESEARCH_PRIMARY_ENDPOINT]: LEGAL_RESEARCH_LABEL,
 };
