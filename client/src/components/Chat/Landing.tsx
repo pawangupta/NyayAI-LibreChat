@@ -5,6 +5,11 @@ import { BirthdayIcon, TooltipAnchor, SplitText } from '@librechat/client';
 import { useChatContext, useAgentsMapContext, useAssistantsMapContext } from '~/Providers';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
 import ConvoIcon from '~/components/Endpoints/ConvoIcon';
+import {
+  DocDraftingWrapper,
+  isDocDraftingEndpointName,
+  isDocDraftingModelName,
+} from '~/features/agents/doc-drafting';
 import { NYAY_ENDPOINTS, NYAY_ENDPOINT_LABELS } from '~/features/agents/shared/nyayAgentRegistry';
 import { useLocalize, useAuthContext } from '~/hooks';
 import { getIconEndpoint, getEntity } from '~/utils';
@@ -71,8 +76,11 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
   const name = entity?.name ?? '';
   const description = (entity?.description || conversation?.greeting) ?? '';
   const activeEndpoint = conversation?.endpoint ?? '';
+  const activeModel = conversation?.model ?? '';
   const isNyayEndpoint = NYAY_ENDPOINTS.has(activeEndpoint);
   const nyayLabel = NYAY_ENDPOINT_LABELS[activeEndpoint] ?? '';
+  const isDocDraftingLanding =
+    isDocDraftingEndpointName(activeEndpoint) || isDocDraftingModelName(activeModel);
 
   const getGreeting = useCallback(() => {
     if (typeof startupConfig?.interface?.customWelcome === 'string') {
@@ -148,6 +156,14 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
       : getGreeting() + (user?.name ? ', ' + user.name : '');
 
   const headingText = isNyayEndpoint ? nyayLabel : greetingText;
+
+  if (isDocDraftingLanding) {
+    return (
+      <div className="w-full max-w-6xl px-4 pb-6 pt-2 sm:px-6 lg:px-8">
+        <DocDraftingWrapper className="my-0">{null}</DocDraftingWrapper>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -10,13 +10,17 @@ import {
   FileUp,
   Loader2,
   Lock,
+  Search,
   WandSparkles,
 } from 'lucide-react';
 import { DOC_DRAFTING_API_BASE_URL } from '../config';
 import { useDraftingRegistry } from '../hooks/useDraftingRegistry';
 import { useDraftingApi } from '../hooks/useDraftingApi';
 import { useDraftingSession } from '../hooks/useDraftingSession';
+import type { DraftingWorkbookField } from '../types';
 import { cn } from '~/utils';
+
+type FieldReviewFilter = 'all' | 'missing' | 'captured' | 'required' | 'optional';
 
 type WorkflowCardProps = {
   stepNumber: number;
@@ -68,6 +72,100 @@ function WorkflowCard({
   );
 }
 
+const FIELD_REVIEW_FILTERS: Array<{ key: FieldReviewFilter; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'missing', label: 'Missing' },
+  { key: 'captured', label: 'Captured' },
+  { key: 'required', label: 'Required' },
+  { key: 'optional', label: 'Optional' },
+];
+
+function hasFieldValue(value: unknown) {
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>).length > 0;
+  }
+
+  return value != null;
+}
+
+function formatFieldValue(value: unknown) {
+  if (!hasFieldValue(value)) {
+    return '—';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function formatSampleDownloadLabel(fileName: string) {
+  return fileName
+    .replace(/^NyayAI_W\d+_/i, '')
+    .replace(/\.xlsx$/i, '')
+    .replace(/_template$/i, '')
+    .replace(/_template_/gi, '_')
+    .replace(/_/g, ' ')
+    .trim();
+}
+
+function formatParsedWorkbookTypeLabel(
+  normalizedPayload: Record<string, unknown> | undefined,
+  fallbackLabel: string | undefined,
+  affidavitSubtype: string | undefined,
+) {
+  const workbookTitle = normalizedPayload?.workbook_title;
+  if (typeof workbookTitle === 'string' && workbookTitle.trim().length > 0) {
+    return workbookTitle.trim();
+  }
+
+  if (affidavitSubtype) {
+    return affidavitSubtype.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  const sourceLabel = normalizedPayload?.source_label;
+  if (typeof sourceLabel === 'string' && sourceLabel.trim().length > 0) {
+    return formatSampleDownloadLabel(sourceLabel.trim());
+  }
+
+  return fallbackLabel ?? 'Drafting workbook';
+}
+
+function getFieldPriority(field: DraftingWorkbookField) {
+  const isCaptured = hasFieldValue(field.value);
+
+  if (field.required && !isCaptured) {
+    return 0;
+  }
+
+  if (field.required && isCaptured) {
+    return 1;
+  }
+
+  if (!field.required && !isCaptured) {
+    return 2;
+  }
+
+  return 3;
+}
+
 export default function DraftingWorkbookPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { templates } = useDraftingRegistry();
@@ -84,6 +182,8 @@ export default function DraftingWorkbookPanel() {
   const [error, setError] = useState<string | null>(null);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [instructions, setInstructions] = useState('');
+  const [fieldQuery, setFieldQuery] = useState('');
+  const [fieldFilter, setFieldFilter] = useState<FieldReviewFilter>('all');
 
   const parsedWorkbook = session.parsedWorkbook;
   const selectedTemplate = useMemo(
@@ -98,7 +198,7 @@ export default function DraftingWorkbookPanel() {
     return selectedTemplate.sampleFiles.map((fileName) => ({
       fileName,
       href: `${DOC_DRAFTING_API_BASE_URL}/templates/${encodeURIComponent(fileName)}`,
-      label: fileName.replace(/\.xlsx$/i, '').replace(/_/g, ' '),
+      label: formatSampleDownloadLabel(fileName),
     }));
   }, [selectedTemplate]);
 
@@ -115,7 +215,72 @@ export default function DraftingWorkbookPanel() {
     session.validation?.completedRequiredCount ?? parsedWorkbook?.completedRequiredCount ?? 0;
   const missingRequiredFields = parsedWorkbook?.missingRequiredFields ?? [];
   const completionRatio = requiredFieldCount > 0 ? completedRequiredCount / requiredFieldCount : 0;
-  const previewFields = (parsedWorkbook?.fields ?? []).filter((field) => field.required).slice(0, 6);
+  const allFields = parsedWorkbook?.fields ?? [];
+  const fieldCounts = useMemo(
+    () => ({
+      total: allFields.length,
+      captured: allFields.filter((field) => hasFieldValue(field.value)).length,
+      missing: allFields.filter((field) => !hasFieldValue(field.value)).length,
+      required: allFields.filter((field) => field.required).length,
+    }),
+    [allFields],
+  );
+  const filteredFields = useMemo(() => {
+    const normalizedQuery = fieldQuery.trim().toLowerCase();
+
+    return allFields.filter((field) => {
+      const captured = hasFieldValue(field.value);
+      const matchesFilter =
+        fieldFilter === 'all'
+          ? true
+          : fieldFilter === 'missing'
+            ? !captured
+            : fieldFilter === 'captured'
+              ? captured
+              : fieldFilter === 'required'
+                ? field.required
+                : !field.required;
+
+      if (!matchesFilter) {
+        return false;
+      }
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      const searchValue = [field.fieldName, field.section, field.explanation, formatFieldValue(field.value)]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return searchValue.includes(normalizedQuery);
+    });
+  }, [allFields, fieldFilter, fieldQuery]);
+  const groupedFieldSections = useMemo(() => {
+    const grouped = new Map<string, DraftingWorkbookField[]>();
+
+    [...filteredFields]
+      .sort((left, right) => {
+        const priorityDelta = getFieldPriority(left) - getFieldPriority(right);
+        if (priorityDelta !== 0) {
+          return priorityDelta;
+        }
+
+        return left.fieldName.localeCompare(right.fieldName);
+      })
+      .forEach((field) => {
+        const sectionKey = field.section || 'General';
+        grouped.set(sectionKey, [...(grouped.get(sectionKey) ?? []), field]);
+      });
+
+    return Array.from(grouped.entries()).map(([section, fields]) => ({
+      section,
+      fields,
+      capturedCount: fields.filter((field) => hasFieldValue(field.value)).length,
+      missingRequiredCount: fields.filter((field) => field.required && !hasFieldValue(field.value)).length,
+    }));
+  }, [filteredFields]);
 
   const canDownloadTemplate = Boolean(selectedTemplate && session.activeStep === 'download');
   const canUploadWorkbook = Boolean(session.templateDownloaded && session.activeStep === 'upload');
@@ -190,6 +355,15 @@ export default function DraftingWorkbookPanel() {
     const fileName = downloadUrl.split('/').pop();
     return fileName ? decodeURIComponent(fileName) : 'Draft export';
   }, [session.lastDraft?.downloadUrl]);
+  const parsedWorkbookTypeLabel = useMemo(
+    () =>
+      formatParsedWorkbookTypeLabel(
+        parsedWorkbook?.normalizedPayload,
+        selectedTemplate?.label,
+        parsedWorkbook?.affidavitSubtype,
+      ),
+    [parsedWorkbook?.affidavitSubtype, parsedWorkbook?.normalizedPayload, selectedTemplate?.label],
+  );
 
   const formattedGeneratedAt = useMemo(() => {
     const generatedAt = session.lastDraft?.generatedAt;
@@ -454,9 +628,7 @@ export default function DraftingWorkbookPanel() {
                   Template type
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-900 dark:text-[#f3efe5]">
-                  {parsedWorkbook.affidavitSubtype
-                    ?.replace(/_/g, ' ')
-                    .replace(/\b\w/g, (char) => char.toUpperCase()) ?? 'Affidavit'}
+                  {parsedWorkbookTypeLabel}
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/5">
@@ -501,54 +673,170 @@ export default function DraftingWorkbookPanel() {
           </div>
         )}
 
-        {previewFields.length > 0 && (
+        {allFields.length > 0 && (
           <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-[#1b1814]">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">Required field preview</p>
-              <span className="text-xs text-slate-500 dark:text-[#a79d90]">
-                First {previewFields.length} mandatory fields
-              </span>
-            </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {previewFields.map((field) => {
-                const hasValue =
-                  typeof field.value === 'string' ? field.value.trim().length > 0 : field.value != null;
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">Field review</p>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-white/10 dark:text-[#b8afa3]">
+                    {filteredFields.length} of {fieldCounts.total} fields
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-[#b8afa3]">
+                  Review every parsed field from the uploaded workbook. Missing required inputs stay pinned to the top of each section.
+                </p>
+              </div>
 
-                return (
-                  <div
-                    key={field.key}
-                    className="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/5"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-[#f3efe5]">{field.fieldName}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-[#a79d90]">{field.section}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em]',
-                          hasValue
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-100'
-                            : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-100',
-                        )}
-                      >
-                        {hasValue ? 'Captured' : 'Missing'}
-                      </span>
-                    </div>
-                    {field.explanation && (
-                      <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-[#b8afa3]">{field.explanation}</p>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="flex w-full flex-col gap-3 xl:max-w-2xl">
+                <label className="relative block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8f887c]" />
+                  <input
+                    type="search"
+                    value={fieldQuery}
+                    onChange={(event) => setFieldQuery(event.target.value)}
+                    placeholder="Search fields, sections, or captured values"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-[#f3efe5] dark:placeholder:text-[#8f887c]"
+                  />
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {FIELD_REVIEW_FILTERS.map((filterOption) => (
+                    <button
+                      key={filterOption.key}
+                      type="button"
+                      onClick={() => setFieldFilter(filterOption.key)}
+                      className={cn(
+                        'rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors',
+                        fieldFilter === filterOption.key
+                          ? 'bg-slate-900 text-white dark:bg-[#d2b36c] dark:text-[#1b1814]'
+                          : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-[#b8afa3]',
+                      )}
+                    >
+                      {filterOption.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-[#a79d90]">Total fields</p>
+                <p className="mt-1 text-sm font-medium text-slate-900 dark:text-[#f3efe5]">{fieldCounts.total}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-[#a79d90]">Captured</p>
+                <p className="mt-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">{fieldCounts.captured}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-[#a79d90]">Missing</p>
+                <p className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-300">{fieldCounts.missing}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-[#a79d90]">Required</p>
+                <p className="mt-1 text-sm font-medium text-slate-900 dark:text-[#f3efe5]">{fieldCounts.required}</p>
+              </div>
+            </div>
+
             {missingRequiredFields.length > 0 && (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
                 <p className="font-medium">Still missing mandatory inputs</p>
-                <p className="mt-1 text-xs leading-5 opacity-90">
-                  {missingRequiredFields.slice(0, 6).join(' • ')}
-                  {missingRequiredFields.length > 6 ? ` • +${missingRequiredFields.length - 6} more` : ''}
-                </p>
+                <p className="mt-1 text-xs leading-5 opacity-90">{missingRequiredFields.join(' • ')}</p>
+              </div>
+            )}
+
+            {groupedFieldSections.length > 0 ? (
+              <div className="mt-4 space-y-4">
+                {groupedFieldSections.map((sectionGroup) => (
+                  <section
+                    key={sectionGroup.section}
+                    className="rounded-xl border border-slate-200 bg-white/90 p-4 dark:border-white/10 dark:bg-white/5"
+                  >
+                    <div className="flex flex-col gap-3 border-b border-slate-200/80 pb-3 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h5 className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">{sectionGroup.section}</h5>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-[#a79d90]">
+                          {sectionGroup.fields.length} field{sectionGroup.fields.length === 1 ? '' : 's'} · {sectionGroup.capturedCount} captured
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {sectionGroup.missingRequiredCount > 0 && (
+                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700 dark:bg-amber-500/10 dark:text-amber-100">
+                            {sectionGroup.missingRequiredCount} required missing
+                          </span>
+                        )}
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-white/10 dark:text-[#b8afa3]">
+                          Section review
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 overflow-x-auto">
+                      <table className="min-w-full border-separate border-spacing-y-2 text-sm">
+                        <thead>
+                          <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-[#a79d90]">
+                            <th className="pb-2 pr-4">Field</th>
+                            <th className="pb-2 pr-4">Requirement</th>
+                            <th className="pb-2 pr-4">Status</th>
+                            <th className="pb-2 pr-4">Value</th>
+                            <th className="pb-2">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sectionGroup.fields.map((field) => {
+                            const fieldCaptured = hasFieldValue(field.value);
+                            const fieldValue = formatFieldValue(field.value);
+
+                            return (
+                              <tr key={field.key} className="align-top">
+                                <td className="rounded-l-xl border border-r-0 border-slate-200 bg-slate-50/70 px-3 py-3 dark:border-white/10 dark:bg-[#1b1814]">
+                                  <div>
+                                    <p className="font-medium text-slate-900 dark:text-[#f3efe5]">{field.fieldName}</p>
+                                    <p className="mt-1 text-xs text-slate-500 dark:text-[#a79d90]">{field.key}</p>
+                                  </div>
+                                </td>
+                                <td className="border border-x-0 border-slate-200 bg-slate-50/70 px-3 py-3 dark:border-white/10 dark:bg-[#1b1814]">
+                                  <span
+                                    className={cn(
+                                      'rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]',
+                                      field.required
+                                        ? 'bg-slate-900 text-white dark:bg-[#d2b36c] dark:text-[#1b1814]'
+                                        : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-[#b8afa3]',
+                                    )}
+                                  >
+                                    {field.required ? 'Required' : 'Optional'}
+                                  </span>
+                                </td>
+                                <td className="border border-x-0 border-slate-200 bg-slate-50/70 px-3 py-3 dark:border-white/10 dark:bg-[#1b1814]">
+                                  <span
+                                    className={cn(
+                                      'rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]',
+                                      fieldCaptured
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-100'
+                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-100',
+                                    )}
+                                  >
+                                    {fieldCaptured ? 'Captured' : 'Missing'}
+                                  </span>
+                                </td>
+                                <td className="border border-x-0 border-slate-200 bg-slate-50/70 px-3 py-3 text-slate-700 dark:border-white/10 dark:bg-[#1b1814] dark:text-[#d0c5b7]">
+                                  <div className="max-w-[320px] whitespace-pre-wrap break-words text-xs leading-5">{fieldValue}</div>
+                                </td>
+                                <td className="rounded-r-xl border border-l-0 border-slate-200 bg-slate-50/70 px-3 py-3 text-xs leading-5 text-slate-600 dark:border-white/10 dark:bg-[#1b1814] dark:text-[#b8afa3]">
+                                  {field.explanation || '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white/85 px-4 py-4 text-sm text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-[#b8afa3]">
+                No fields match the current search or filter. Adjust the field review controls to see more of the workbook.
               </div>
             )}
           </div>

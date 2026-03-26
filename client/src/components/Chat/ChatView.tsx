@@ -17,6 +17,7 @@ import Landing from './Landing';
 import Header from './Header';
 import Footer from './Footer';
 import { cn } from '~/utils';
+import { isDocDraftingEndpointName, isDocDraftingModelName } from '~/features/agents/doc-drafting';
 import store from '~/store';
 
 function LoadingSpinner() {
@@ -34,6 +35,7 @@ function ChatView({ index = 0 }: { index?: number }) {
   const rootSubmission = useRecoilValue(store.submissionByIndex(index));
   const addedSubmission = useRecoilValue(store.submissionByIndex(index + 1));
   const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
+  const conversation = useRecoilValue(store.conversationByIndex(index));
 
   const fileMap = useFileMapContext();
 
@@ -63,6 +65,17 @@ function ChatView({ index = 0 }: { index?: number }) {
     (!messagesTree || messagesTree.length === 0) &&
     (conversationId === Constants.NEW_CONVO || !conversationId);
   const isNavigating = (!messagesTree || messagesTree.length === 0) && conversationId != null;
+  const isDocDraftingLanding =
+    isLandingPage &&
+    (isDocDraftingEndpointName(conversation?.endpoint) ||
+      isDocDraftingModelName(conversation?.model));
+  let landingContainerClassName = 'h-full overflow-y-auto';
+
+  if (isLandingPage) {
+    landingContainerClassName = isDocDraftingLanding
+      ? 'flex-1 items-stretch justify-start overflow-y-auto'
+      : 'flex-1 items-center justify-end sm:justify-center';
+  }
 
   if (isLoading && conversationId !== Constants.NEW_CONVO) {
     content = <LoadingSpinner />;
@@ -82,23 +95,19 @@ function ChatView({ index = 0 }: { index?: number }) {
             <div className="flex h-full w-full flex-col">
               {!isLoading && <Header />}
               <>
-                <div
-                  className={cn(
-                    'flex flex-col',
-                    isLandingPage
-                      ? 'flex-1 items-center justify-end sm:justify-center'
-                      : 'h-full overflow-y-auto',
-                  )}
-                >
+                <div className={cn('flex flex-col', landingContainerClassName)}>
                   {content}
                   <div
                     className={cn(
                       'w-full',
-                      isLandingPage && 'max-w-3xl transition-all duration-200 xl:max-w-4xl',
+                      isLandingPage &&
+                        (isDocDraftingLanding
+                          ? 'max-w-6xl px-4 pb-4 sm:px-6 lg:px-8'
+                          : 'max-w-3xl transition-all duration-200 xl:max-w-4xl'),
                     )}
                   >
                     <ChatForm index={index} />
-                    {isLandingPage ? <ConversationStarters /> : <Footer />}
+                    {isLandingPage && !isDocDraftingLanding ? <ConversationStarters /> : <Footer />}
                   </div>
                 </div>
                 {isLandingPage && <Footer />}

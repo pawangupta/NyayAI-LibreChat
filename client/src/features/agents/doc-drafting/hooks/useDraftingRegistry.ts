@@ -7,15 +7,26 @@ const DEFAULT_TEMPLATES: DraftingTemplate[] = [
     id: 'affidavit',
     type: 'affidavit',
     label: 'Affidavit',
-    description: 'Structured affidavit drafting from spreadsheet-backed inputs.',
+    description: 'Sworn statement drafting from structured workbook inputs.',
     enabled: true,
+    status: 'active',
   },
   {
     id: 'will',
     type: 'will',
     label: 'Will',
-    description: 'Future migration path from the existing wills drafting flow.',
-    enabled: false,
+    description: 'Testamentary drafting for simple and full-estate will workflows.',
+    enabled: true,
+    status: 'active',
+  },
+  {
+    id: 'writ_petition',
+    type: 'writ_petition',
+    label: 'Writ Petitions',
+    description:
+      'High Court writ petitions, supporting affidavits, and reply formats from structured workbooks.',
+    enabled: true,
+    status: 'active',
   },
   {
     id: 'contract',
@@ -23,8 +34,41 @@ const DEFAULT_TEMPLATES: DraftingTemplate[] = [
     label: 'Contract',
     description: 'Template-guided agreement drafting.',
     enabled: false,
+    status: 'coming-soon',
+  },
+  {
+    id: 'legal_notice',
+    type: 'legal_notice',
+    label: 'Legal Notice',
+    description: 'Formal pre-litigation and demand notice drafting.',
+    enabled: false,
+    status: 'coming-soon',
+  },
+  {
+    id: 'plaint',
+    type: 'plaint',
+    label: 'Plaint',
+    description: 'Civil pleading workflows will be added after drafting validation flows.',
+    enabled: false,
+    status: 'coming-soon',
   },
 ];
+
+function mergeTemplates(remoteTemplates: DraftingTemplate[]) {
+  const templateMap = new Map(DEFAULT_TEMPLATES.map((template) => [template.type, template]));
+
+  for (const remoteTemplate of remoteTemplates) {
+    const existingTemplate = templateMap.get(remoteTemplate.type);
+    templateMap.set(remoteTemplate.type, {
+      ...(existingTemplate ?? remoteTemplate),
+      ...remoteTemplate,
+      description: remoteTemplate.description || existingTemplate?.description || '',
+      status: remoteTemplate.status ?? existingTemplate?.status,
+    });
+  }
+
+  return Array.from(templateMap.values());
+}
 
 export function useDraftingRegistry() {
   const [templates, setTemplates] = useState<DraftingTemplate[]>(DEFAULT_TEMPLATES);
@@ -56,18 +100,20 @@ export function useDraftingRegistry() {
 
         if (Array.isArray(data.templates) && data.templates.length > 0) {
           setTemplates(
-            data.templates.map((template) => ({
-              id: template.id,
-              type: template.type,
-              label: template.label,
-              description: template.description,
-              enabled: template.enabled,
-              status: template.status,
-              inputFormat: template.inputFormat ?? template.input_format,
-              templateUrl: template.templateUrl ?? template.template_url,
-              sampleUrl: template.sampleUrl ?? template.sample_url,
-              sampleFiles: template.sampleFiles ?? template.sample_files,
-            })),
+            mergeTemplates(
+              data.templates.map((template) => ({
+                id: template.id,
+                type: template.type,
+                label: template.label,
+                description: template.description,
+                enabled: template.enabled,
+                status: template.status,
+                inputFormat: template.inputFormat ?? template.input_format,
+                templateUrl: template.templateUrl ?? template.template_url,
+                sampleUrl: template.sampleUrl ?? template.sample_url,
+                sampleFiles: template.sampleFiles ?? template.sample_files,
+              })),
+            ),
           );
         }
         setError(null);
