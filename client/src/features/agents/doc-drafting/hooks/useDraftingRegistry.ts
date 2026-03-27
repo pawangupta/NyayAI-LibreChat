@@ -28,6 +28,14 @@ const DEFAULT_TEMPLATES: DraftingTemplate[] = [
     status: 'active',
   },
   {
+    id: 'income_tax',
+    type: 'income_tax',
+    label: 'Income Tax',
+    description: 'Income-tax certificates, declarations, audit reports, and settlement forms from structured workbooks.',
+    enabled: true,
+    status: 'active',
+  },
+  {
     id: 'writ_petition',
     type: 'writ_petition',
     label: 'Writ Petitions',

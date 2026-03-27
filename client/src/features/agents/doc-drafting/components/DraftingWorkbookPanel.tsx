@@ -118,7 +118,7 @@ function formatFieldValue(value: unknown) {
 
 function formatSampleDownloadLabel(fileName: string) {
   return fileName
-    .replace(/^NyayAI_(?:W\d+|POA\d+|PL\d+)_/i, '')
+    .replace(/^NyayAI_(?:W\d+|POA\d+|PL\d+|IT\d+)_/i, '')
     .replace(/\.xlsx$/i, '')
     .replace(/_template$/i, '')
     .replace(/_template_/gi, '_')

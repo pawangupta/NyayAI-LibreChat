@@ -10,6 +10,7 @@ const PRIMARY_TEMPLATE_ORDER: DraftingDocumentType[] = [
   'will',
   'power_of_attorney',
   'plaint',
+  'income_tax',
   'writ_petition',
   'contract',
   'legal_notice',

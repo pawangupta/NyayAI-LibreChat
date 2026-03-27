@@ -4,6 +4,7 @@ export type DraftingDocumentType =
   | 'affidavit'
   | 'will'
   | 'power_of_attorney'
+  | 'income_tax'
   | 'writ_petition'
   | 'contract'
   | 'legal_notice'
