@@ -118,7 +118,7 @@ function formatFieldValue(value: unknown) {
 
 function formatSampleDownloadLabel(fileName: string) {
   return fileName
-    .replace(/^NyayAI_W\d+_/i, '')
+    .replace(/^NyayAI_(?:W\d+|POA\d+|PL\d+)_/i, '')
     .replace(/\.xlsx$/i, '')
     .replace(/_template$/i, '')
     .replace(/_template_/gi, '_')
@@ -883,7 +883,7 @@ export default function DraftingWorkbookPanel() {
             value={instructions}
             onChange={(event) => setInstructions(event.target.value)}
             rows={4}
-            placeholder="Add optional drafting instructions, tone guidance, or affidavit-specific emphasis."
+            placeholder="Add optional drafting instructions, tone guidance, or document-specific emphasis."
             className="w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-[#1b1814] dark:text-[#f3efe5] dark:placeholder:text-[#8f887c]"
           />
         </div>

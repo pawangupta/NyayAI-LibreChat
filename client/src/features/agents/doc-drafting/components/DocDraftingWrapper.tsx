@@ -116,7 +116,7 @@ export default function DocDraftingWrapper({
               style={labelFont}
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Affidavit-first workflow
+              Multi-template workflow
             </span>
           </div>
 

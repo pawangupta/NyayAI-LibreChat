@@ -3,6 +3,7 @@ export type DraftingStepKey = 'select' | 'download' | 'upload' | 'generate';
 export type DraftingDocumentType =
   | 'affidavit'
   | 'will'
+  | 'power_of_attorney'
   | 'writ_petition'
   | 'contract'
   | 'legal_notice'

@@ -3,7 +3,7 @@ import { FileSpreadsheet, ShieldCheck, WandSparkles } from 'lucide-react';
 const cards = [
   {
     title: 'Download the right template',
-    description: 'Start with affidavit spreadsheet templates and sample inputs.',
+    description: 'Start with the right workbook template and sample inputs for the selected document family.',
     Icon: FileSpreadsheet,
   },
   {

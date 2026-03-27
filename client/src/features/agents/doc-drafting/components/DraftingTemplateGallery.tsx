@@ -8,6 +8,8 @@ import { cn } from '~/utils';
 const PRIMARY_TEMPLATE_ORDER: DraftingDocumentType[] = [
   'affidavit',
   'will',
+  'power_of_attorney',
+  'plaint',
   'writ_petition',
   'contract',
   'legal_notice',
