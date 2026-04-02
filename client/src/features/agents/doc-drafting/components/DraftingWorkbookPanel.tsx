@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -6,6 +6,7 @@ import {
   Download,
   Eye,
   FileDown,
+  FilePlus2,
   FileText,
   FileUp,
   Loader2,
@@ -13,11 +14,11 @@ import {
   Search,
   WandSparkles,
 } from 'lucide-react';
-import { DOC_DRAFTING_API_BASE_URL } from '../config';
+import { DOC_DRAFTING_API_BASE_URL, resolveDocDraftingUrl } from '../config';
 import { useDraftingRegistry } from '../hooks/useDraftingRegistry';
 import { useDraftingApi } from '../hooks/useDraftingApi';
 import { useDraftingSession } from '../hooks/useDraftingSession';
-import type { DraftingWorkbookField } from '../types';
+import type { DraftingTemplateSubtype, DraftingWorkbookField } from '../types';
 import { cn } from '~/utils';
 
 type FieldReviewFilter = 'all' | 'missing' | 'captured' | 'required' | 'optional';
@@ -118,7 +119,7 @@ function formatFieldValue(value: unknown) {
 
 function formatSampleDownloadLabel(fileName: string) {
   return fileName
-    .replace(/^NyayAI_(?:W\d+|POA\d+|PL\d+|IT\d+)_/i, '')
+    .replace(/^NyayAI_(?:W\d+|POA\d+|PL\d+|IT\d+|Civil_\d+)_/i, '')
     .replace(/\.xlsx$/i, '')
     .replace(/_template$/i, '')
     .replace(/_template_/gi, '_')
@@ -168,12 +169,14 @@ function getFieldPriority(field: DraftingWorkbookField) {
 
 export default function DraftingWorkbookPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const supportingDocsRef = useRef<HTMLInputElement>(null);
   const { templates } = useDraftingRegistry();
-  const { parseWorkbook, validate, generate } = useDraftingApi();
+  const { parseWorkbook, prepareTemplate, validate, generate } = useDraftingApi();
   const {
     session,
     markTemplateDownloaded,
     setDocumentType,
+    setSelectedSubtype,
     setParsedWorkbook,
     setValidation,
     setLastDraft,
@@ -184,13 +187,55 @@ export default function DraftingWorkbookPanel() {
   const [instructions, setInstructions] = useState('');
   const [fieldQuery, setFieldQuery] = useState('');
   const [fieldFilter, setFieldFilter] = useState<FieldReviewFilter>('all');
+  const [supportingFiles, setSupportingFiles] = useState<File[]>([]);
+  const parseRequestIdRef = useRef(0);
+  const validateRequestIdRef = useRef(0);
+  const generateRequestIdRef = useRef(0);
 
   const parsedWorkbook = session.parsedWorkbook;
   const selectedTemplate = useMemo(
     () => templates.find((template) => template.type === session.selectedDocumentType),
     [session.selectedDocumentType, templates],
   );
+  const selectedSubtype = useMemo(
+    () => selectedTemplate?.subtypes?.find((subtype) => subtype.id === session.selectedSubtypeId),
+    [selectedTemplate?.subtypes, session.selectedSubtypeId],
+  );
+  const effectiveSubtype = useMemo<DraftingTemplateSubtype | undefined>(() => {
+    if (selectedSubtype) {
+      return selectedSubtype;
+    }
+    if ((selectedTemplate?.subtypes?.length ?? 0) === 1) {
+      return selectedTemplate?.subtypes?.[0];
+    }
+    return undefined;
+  }, [selectedSubtype, selectedTemplate?.subtypes]);
+
+  useEffect(() => {
+    if (!selectedTemplate?.subtypes?.length) {
+      return;
+    }
+
+    if (selectedTemplate.subtypes.length === 1 && session.selectedSubtypeId !== selectedTemplate.subtypes[0].id) {
+      setSelectedSubtype(selectedTemplate.subtypes[0]);
+    }
+  }, [selectedTemplate, session.selectedSubtypeId, setSelectedSubtype]);
+
+  useEffect(() => {
+    setSupportingFiles([]);
+  }, [session.selectedDocumentType, session.selectedSubtypeId]);
+
   const sampleDownloads = useMemo(() => {
+    if (effectiveSubtype?.templateFileName) {
+      return [
+        {
+          fileName: effectiveSubtype.templateFileName,
+          href: `${DOC_DRAFTING_API_BASE_URL}/templates/${encodeURIComponent(effectiveSubtype.templateFileName)}`,
+          label: formatSampleDownloadLabel(effectiveSubtype.templateFileName),
+        },
+      ];
+    }
+
     if (!selectedTemplate?.sampleFiles?.length) {
       return [];
     }
@@ -200,7 +245,7 @@ export default function DraftingWorkbookPanel() {
       href: `${DOC_DRAFTING_API_BASE_URL}/templates/${encodeURIComponent(fileName)}`,
       label: formatSampleDownloadLabel(fileName),
     }));
-  }, [selectedTemplate]);
+  }, [effectiveSubtype?.templateFileName, selectedTemplate]);
 
   const normalizedPayload = useMemo(
     () => ({
@@ -290,17 +335,7 @@ export default function DraftingWorkbookPanel() {
   );
 
   const resolvedDownloadUrl = useMemo(() => {
-    const downloadUrl = session.lastDraft?.downloadUrl;
-    if (!downloadUrl) {
-      return null;
-    }
-
-    if (/^https?:\/\//i.test(downloadUrl)) {
-      return downloadUrl;
-    }
-
-    const apiOrigin = DOC_DRAFTING_API_BASE_URL.replace(/\/v1\/drafting$/, '');
-    return `${apiOrigin}${downloadUrl.startsWith('/') ? downloadUrl : `/${downloadUrl}`}`;
+    return resolveDocDraftingUrl(session.lastDraft?.downloadUrl);
   }, [session.lastDraft?.downloadUrl]);
 
   const generatedDraftView = useMemo(() => {
@@ -365,6 +400,16 @@ export default function DraftingWorkbookPanel() {
     [parsedWorkbook?.affidavitSubtype, parsedWorkbook?.normalizedPayload, selectedTemplate?.label],
   );
 
+  const stepTwoReady = useMemo(() => {
+    if (!canDownloadTemplate) {
+      return false;
+    }
+    if (selectedTemplate?.subtypes?.length) {
+      return Boolean(effectiveSubtype?.enabled && effectiveSubtype.templateFileName);
+    }
+    return sampleDownloads.length > 0;
+  }, [canDownloadTemplate, effectiveSubtype, sampleDownloads.length, selectedTemplate?.subtypes?.length]);
+
   const formattedGeneratedAt = useMemo(() => {
     const generatedAt = session.lastDraft?.generatedAt;
     if (!generatedAt) {
@@ -388,11 +433,19 @@ export default function DraftingWorkbookPanel() {
       return;
     }
 
+    const requestId = ++parseRequestIdRef.current;
+    validateRequestIdRef.current += 1;
+    generateRequestIdRef.current += 1;
+
     setLoading(true);
     setError(null);
 
     try {
       const parsed = await parseWorkbook(file);
+
+      if (parseRequestIdRef.current !== requestId) {
+        return;
+      }
 
       if (parsed.inferredDocumentType && parsed.inferredDocumentType !== session.selectedDocumentType) {
         setDocumentType(parsed.inferredDocumentType);
@@ -401,9 +454,15 @@ export default function DraftingWorkbookPanel() {
 
       setParsedWorkbook(parsed);
     } catch (err) {
+      if (parseRequestIdRef.current !== requestId) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to parse workbook');
     } finally {
-      setLoading(false);
+      if (parseRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
+      event.target.value = '';
     }
   };
 
@@ -413,6 +472,9 @@ export default function DraftingWorkbookPanel() {
       return;
     }
 
+    const requestId = ++validateRequestIdRef.current;
+    generateRequestIdRef.current += 1;
+
     setLoading(true);
     setError(null);
 
@@ -421,11 +483,20 @@ export default function DraftingWorkbookPanel() {
         documentType: session.selectedDocumentType,
         payload: normalizedPayload,
       });
+
+      if (validateRequestIdRef.current !== requestId) {
+        return;
+      }
       setValidation(result);
     } catch (err) {
+      if (validateRequestIdRef.current !== requestId) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Validation failed');
     } finally {
-      setLoading(false);
+      if (validateRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -434,6 +505,8 @@ export default function DraftingWorkbookPanel() {
       setError('Select a document type before generation.');
       return;
     }
+
+    const requestId = ++generateRequestIdRef.current;
 
     setLoading(true);
     setError(null);
@@ -445,11 +518,20 @@ export default function DraftingWorkbookPanel() {
         userInstructions: instructions,
         payload: normalizedPayload,
       });
+
+      if (generateRequestIdRef.current !== requestId) {
+        return;
+      }
       setLastDraft(result);
     } catch (err) {
+      if (generateRequestIdRef.current !== requestId) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Draft generation failed');
     } finally {
-      setLoading(false);
+      if (generateRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -466,6 +548,50 @@ export default function DraftingWorkbookPanel() {
     } catch {
       setCopyNotice('Unable to copy draft text.');
     }
+  };
+
+  const handleSupportingFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSupportingFiles(Array.from(event.target.files ?? []));
+  };
+
+  const handleTemplateDownload = async (fileName: string) => {
+    if (!session.selectedDocumentType) {
+      setError('Select a document type before downloading a template.');
+      return;
+    }
+
+    const subtypeSupportsDocs = Boolean(effectiveSubtype?.supportsUploadDocs);
+    const requestFiles = subtypeSupportsDocs ? supportingFiles : [];
+
+    if (subtypeSupportsDocs) {
+      setLoading(true);
+      setError(null);
+      try {
+        const prepared = await prepareTemplate({
+          documentType: session.selectedDocumentType,
+          templateFileName: fileName,
+          supportingFiles: requestFiles,
+        });
+
+        markTemplateDownloaded(prepared.fileName, {
+          supportingUploadNames: requestFiles.map((file) => file.name),
+          preparedTemplateUrl: prepared.downloadUrl,
+          preparedTemplateMessage: prepared.message,
+        });
+
+        window.open(resolveDocDraftingUrl(prepared.downloadUrl) ?? prepared.downloadUrl, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Template download failed');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    markTemplateDownloaded(fileName, {
+      supportingUploadNames: supportingFiles.map((file) => file.name),
+    });
+    window.open(`${DOC_DRAFTING_API_BASE_URL}/templates/${encodeURIComponent(fileName)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -486,8 +612,8 @@ export default function DraftingWorkbookPanel() {
 
       <WorkflowCard
         stepNumber={2}
-        title="Download template"
-        description="Download the correct workbook template for the document selected in Step 1. Only the immediate next action is active here."
+        title="Download Template"
+        description="Choose the template sub-type, optionally upload supporting documents where applicable, then download the workbook for Step 3."
         isActive={session.activeStep === 'download'}
         isComplete={Boolean(session.templateDownloaded)}
       >
@@ -500,32 +626,122 @@ export default function DraftingWorkbookPanel() {
             <div className="rounded-xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/10 dark:bg-[#1b1814]">
               <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">{selectedTemplate.label}</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-[#b8afa3]">{selectedTemplate.description}</p>
+              {selectedTemplate.subtypes?.length ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-[#a79d90]">
+                    Available doc sub-types
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {selectedTemplate.subtypes.map((subtype) => {
+                      const isSelected = effectiveSubtype?.id === subtype.id;
+                      return (
+                        <button
+                          key={subtype.id}
+                          type="button"
+                          disabled={!subtype.enabled}
+                          onClick={() => setSelectedSubtype(subtype)}
+                          className={cn(
+                            'rounded-xl border px-4 py-3 text-left transition-all',
+                            isSelected
+                              ? 'border-slate-900 bg-slate-900 text-white dark:border-[#d2b36c] dark:bg-[#221d16]'
+                              : 'border-slate-200 bg-white text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-[#f3efe5]',
+                            !subtype.enabled && 'cursor-not-allowed opacity-50',
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold">{subtype.label}</p>
+                            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                              {isSelected ? 'Selected' : subtype.enabled ? 'Ready' : 'Soon'}
+                            </span>
+                          </div>
+                          {subtype.description && (
+                            <p className={cn('mt-2 text-xs leading-5', isSelected ? 'text-white/80' : 'text-slate-600 dark:text-[#b8afa3]')}>
+                              {subtype.description}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {effectiveSubtype?.supportsUploadDocs ? (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5">
+                  <input
+                    ref={supportingDocsRef}
+                    type="file"
+                    multiple
+                    accept={(effectiveSubtype.acceptedUploadTypes ?? []).join(',')}
+                    className="hidden"
+                    onChange={handleSupportingFilesChange}
+                  />
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">Optional upload docs</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-[#b8afa3]">
+                        Upload the notice or supporting document if you want NyayAI to pre-fill the template before download. If no document is uploaded, the standard blank template will be provided.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!stepTwoReady || session.isLoading}
+                      onClick={() => supportingDocsRef.current?.click()}
+                      className={cn(
+                        'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium',
+                        stepTwoReady && !session.isLoading
+                          ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-[#221d16] dark:text-[#f3efe5]'
+                          : 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-[#8f887c]',
+                      )}
+                    >
+                      <FilePlus2 className="h-4 w-4" />
+                      Upload docs
+                    </button>
+                  </div>
+                  {supportingFiles.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {supportingFiles.map((file) => (
+                        <span
+                          key={`${file.name}-${file.size}`}
+                          className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-white/10 dark:bg-[#221d16] dark:text-[#d0c5b7]"
+                        >
+                          {file.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               {session.templateDownloaded && (
                 <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-100">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {session.templateDownloadFileName ?? 'Template'} downloaded
                 </p>
               )}
+              {session.preparedTemplateMessage && (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-[#d0c5b7]">
+                  {session.preparedTemplateMessage}
+                </div>
+              )}
             </div>
 
             {sampleDownloads.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {sampleDownloads.map((sample) => {
-                  const disabled = !canDownloadTemplate;
+                  const disabled = !stepTwoReady;
 
                   return (
-                    <a
+                    <button
                       key={sample.fileName}
-                      href={sample.href}
-                      target="_blank"
-                      rel="noreferrer"
+                      type="button"
                       onClick={(event) => {
                         if (disabled) {
                           event.preventDefault();
                           return;
                         }
 
-                        markTemplateDownloaded(sample.fileName);
+                        void handleTemplateDownload(sample.fileName);
                       }}
                       aria-disabled={disabled}
                       className={cn(
@@ -537,7 +753,7 @@ export default function DraftingWorkbookPanel() {
                     >
                       {disabled ? <Lock className="h-3.5 w-3.5" /> : <FileDown className="h-3.5 w-3.5" />}
                       {sample.label}
-                    </a>
+                    </button>
                   );
                 })}
               </div>
@@ -947,7 +1163,7 @@ export default function DraftingWorkbookPanel() {
                       className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-[#d0c5b7]"
                     >
                       <Eye className="h-3.5 w-3.5" />
-                      Preview file
+                      Open in new tab
                     </button>
                     <button
                       type="button"
@@ -961,6 +1177,12 @@ export default function DraftingWorkbookPanel() {
                 )}
               </div>
             </div>
+
+            {resolvedDownloadUrl && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-[#b8afa3]">
+                The generated DOCX opens automatically in the right-side preview pane.
+              </div>
+            )}
 
             {copyNotice && (
               <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-[#d0c5b7]">

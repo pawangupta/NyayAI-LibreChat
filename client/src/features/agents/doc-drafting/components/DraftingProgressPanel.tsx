@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ArrowDown, CheckCircle2, Download, Eye, FileSpreadsheet, WandSparkles } from 'lucide-react';
-import { DOC_DRAFTING_API_BASE_URL } from '../config';
+import { resolveDocDraftingUrl } from '../config';
 import { useDraftingSession } from '../hooks/useDraftingSession';
 import { cn } from '~/utils';
 
@@ -13,17 +13,7 @@ export default function DraftingProgressPanel() {
   const { session } = useDraftingSession();
 
   const resolvedDownloadUrl = useMemo(() => {
-    const downloadUrl = session.lastDraft?.downloadUrl;
-    if (!downloadUrl) {
-      return null;
-    }
-
-    if (/^https?:\/\//i.test(downloadUrl)) {
-      return downloadUrl;
-    }
-
-    const serviceBase = DOC_DRAFTING_API_BASE_URL.replace(/\/drafting$/, '');
-    return `${serviceBase}${downloadUrl.startsWith('/') ? downloadUrl : `/${downloadUrl}`}`;
+    return resolveDocDraftingUrl(session.lastDraft?.downloadUrl);
   }, [session.lastDraft?.downloadUrl]);
 
   const formattedGeneratedAt = useMemo(() => {

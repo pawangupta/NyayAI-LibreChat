@@ -1,6 +1,6 @@
 version: 1.3.1
 cache: true
-fileStrategy: "s3"
+fileStrategy: "local"
 
 interface:
   customWelcome: 'Welcome to NyayAI! Your AI-powered legal assistant.'
@@ -102,7 +102,7 @@ endpoints:
     # ── Contract Review ────────────────────────────────────────────────────────
     - name: "Contract Review"
       apiKey: "legal-contract-dev-key"
-      baseURL: "http://host.docker.internal:8000/v1"
+      baseURL: "http://host.docker.internal:8001/v1"
       models:
         default: ["Tabular Contract Review"]
         fetch: false

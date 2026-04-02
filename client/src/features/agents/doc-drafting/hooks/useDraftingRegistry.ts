@@ -28,12 +28,40 @@ const DEFAULT_TEMPLATES: DraftingTemplate[] = [
     status: 'active',
   },
   {
+    id: 'civil_proceedings',
+    type: 'civil_proceedings',
+    label: 'Civil Proceedings',
+    description: 'Civil proceedings drafting for affidavits, CPC applications, plaints and written statements, injunctions, appeals, and decree or execution workflows.',
+    enabled: true,
+    status: 'active',
+  },
+  {
     id: 'income_tax',
     type: 'income_tax',
     label: 'Income Tax',
     description: 'Income-tax certificates, declarations, audit reports, and settlement forms from structured workbooks.',
     enabled: true,
     status: 'active',
+  },
+  {
+    id: 'income_tax_reply',
+    type: 'income_tax_reply',
+    label: 'Income Tax - Reply',
+    description: 'Replies to departmental income-tax notices, starting with Section 148A(b) notice responses.',
+    enabled: true,
+    status: 'active',
+    subtypes: [
+      {
+        id: 's_148a_b_notice_for_reassessment',
+        label: 'S 148A(b) - Notice for reassessment',
+        description: 'Upload the notice optionally to pre-fill the reply template before download.',
+        enabled: true,
+        templateFileName: 'NyayAI_Tax_S148A_Reply_Template.xlsx',
+        supportsUploadDocs: true,
+        uploadDocsOptional: true,
+        acceptedUploadTypes: ['.pdf', '.docx', '.doc', '.txt'],
+      },
+    ],
   },
   {
     id: 'writ_petition',
@@ -80,6 +108,7 @@ function mergeTemplates(remoteTemplates: DraftingTemplate[]) {
       ...remoteTemplate,
       description: remoteTemplate.description || existingTemplate?.description || '',
       status: remoteTemplate.status ?? existingTemplate?.status,
+      subtypes: remoteTemplate.subtypes ?? existingTemplate?.subtypes,
     });
   }
 
@@ -117,18 +146,29 @@ export function useDraftingRegistry() {
         if (Array.isArray(data.templates) && data.templates.length > 0) {
           setTemplates(
             mergeTemplates(
-              data.templates.map((template) => ({
-                id: template.id,
-                type: template.type,
-                label: template.label,
-                description: template.description,
-                enabled: template.enabled,
-                status: template.status,
-                inputFormat: template.inputFormat ?? template.input_format,
-                templateUrl: template.templateUrl ?? template.template_url,
-                sampleUrl: template.sampleUrl ?? template.sample_url,
-                sampleFiles: template.sampleFiles ?? template.sample_files,
-              })),
+              data.templates.map((template) => {
+                const mapped: DraftingTemplate = {
+                  id: template.id,
+                  type: template.type,
+                  label: template.label,
+                  description: template.description,
+                  enabled: template.enabled,
+                  status: template.status,
+                  inputFormat: template.inputFormat ?? template.input_format,
+                  templateUrl: template.templateUrl ?? template.template_url,
+                  sampleUrl: template.sampleUrl ?? template.sample_url,
+                  sampleFiles: template.sampleFiles ?? template.sample_files,
+                };
+
+                const remoteSubtypes = (template as DraftingTemplate & {
+                  subtypes?: DraftingTemplate['subtypes'];
+                }).subtypes;
+                if (remoteSubtypes) {
+                  mapped.subtypes = remoteSubtypes;
+                }
+
+                return mapped;
+              }),
             ),
           );
         }

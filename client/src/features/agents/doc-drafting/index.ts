@@ -12,6 +12,7 @@ export {
 } from './config';
 export { isDocDraftingConversation } from './lib/isDocDraftingConversation';
 export { default as DocDraftingWrapper, extractDocDraftingPreview, isDocDraftingResponse } from './components/DocDraftingWrapper';
+export { default as DraftingPreviewPanel } from './components/DraftingPreviewPanel';
 export { useDraftingApi } from './hooks/useDraftingApi';
 export { useDraftingRegistry } from './hooks/useDraftingRegistry';
 export { useDraftingSession } from './hooks/useDraftingSession';

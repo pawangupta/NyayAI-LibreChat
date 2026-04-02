@@ -1,18 +1,32 @@
 type EndpointLike = { name: string };
 
 const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? '';
+const DEFAULT_DOC_DRAFTING_PROXY_BASE = '/api/drafting-assistant/v1/drafting';
 
 function resolveDraftingApiBaseUrl() {
-  const fallbackProtocol = 'http:';
-  const fallbackHostname = 'localhost';
-
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol || fallbackProtocol;
-    const hostname = window.location.hostname || fallbackHostname;
-    return `${protocol}//${hostname}:8004/v1/drafting`;
+  const envBaseUrl = import.meta.env.VITE_DOC_DRAFTING_API_BASE_URL;
+  if (typeof envBaseUrl === 'string' && envBaseUrl.trim()) {
+    return envBaseUrl.replace(/\/+$/, '');
   }
 
-  return `${fallbackProtocol}//${fallbackHostname}:8004/v1/drafting`;
+  return DEFAULT_DOC_DRAFTING_PROXY_BASE;
+}
+
+export function resolveDocDraftingServiceBase() {
+  return DOC_DRAFTING_API_BASE_URL.replace(/\/v1\/drafting$/, '');
+}
+
+export function resolveDocDraftingUrl(pathOrUrl?: string | null) {
+  if (!pathOrUrl) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    return pathOrUrl;
+  }
+
+  const serviceBase = resolveDocDraftingServiceBase();
+  return `${serviceBase}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
 }
 
 export const DOC_DRAFTING_API_BASE_URL = resolveDraftingApiBaseUrl();

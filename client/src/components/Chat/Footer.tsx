@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import TagManager from 'react-gtm-module';
-import { Constants } from 'librechat-data-provider';
 import { useGetStartupConfig } from '~/data-provider';
 import { useLocalize } from '~/hooks';
 
@@ -37,10 +36,7 @@ export default function Footer({ className }: { className?: string }) {
   const mainContentParts = (
     typeof config?.customFooter === 'string'
       ? config.customFooter
-      : '[LibreChat ' +
-        Constants.VERSION +
-        '](https://librechat.ai) - ' +
-        localize('com_ui_latest_footer')
+      : 'Nyay AI Beta 1.0 - AI Powered Law'
   ).split('|');
 
   useEffect(() => {

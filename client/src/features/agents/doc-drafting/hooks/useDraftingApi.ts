@@ -29,6 +29,7 @@ export function useDraftingApi() {
         inferred_document_type?: DraftingParsedWorkbook['inferredDocumentType'];
         normalized_payload?: Record<string, unknown> & {
           affidavit_subtype?: string;
+          income_tax_reply_subtype?: string;
           required_field_count?: number;
           completed_required_count?: number;
           missing_required_fields?: string[];
@@ -58,11 +59,55 @@ export function useDraftingApi() {
         workbookSummary: data.workbook_summary,
         inferredDocumentType: data.inferred_document_type,
         affidavitSubtype: data.normalized_payload?.affidavit_subtype,
+        incomeTaxReplySubtype: data.normalized_payload?.income_tax_reply_subtype as string | undefined,
         requiredFieldCount: data.normalized_payload?.required_field_count,
         completedRequiredCount: data.normalized_payload?.completed_required_count,
         missingRequiredFields: data.normalized_payload?.missing_required_fields,
         fields,
         normalizedPayload: data.normalized_payload,
+      };
+    },
+    async prepareTemplate(payload: {
+      documentType: string;
+      templateFileName: string;
+      supportingFiles?: File[];
+    }): Promise<{
+      fileName: string;
+      downloadUrl: string;
+      source: string;
+      message?: string;
+      ignoredUploads?: boolean;
+    }> {
+      const formData = new FormData();
+      formData.append('document_type', payload.documentType);
+      formData.append('template_file_name', payload.templateFileName);
+      for (const file of payload.supportingFiles ?? []) {
+        formData.append('supporting_files', file, file.name);
+      }
+
+      const response = await fetch(`${DOC_DRAFTING_API_BASE_URL}/prepare-template`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Template preparation failed with status ${response.status}`);
+      }
+
+      const data = (await response.json()) as {
+        file_name: string;
+        download_url: string;
+        source: string;
+        message?: string;
+        ignored_uploads?: boolean;
+      };
+
+      return {
+        fileName: data.file_name,
+        downloadUrl: data.download_url,
+        source: data.source,
+        message: data.message,
+        ignoredUploads: data.ignored_uploads,
       };
     },
     async validate(payload: {

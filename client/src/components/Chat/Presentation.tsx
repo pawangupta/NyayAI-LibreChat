@@ -7,6 +7,11 @@ import DragDropWrapper from '~/components/Chat/Input/Files/DragDropWrapper';
 import { EditorProvider, SidePanelProvider, ArtifactsProvider, useChatContext } from '~/Providers';
 import Artifacts from '~/components/Artifacts/Artifacts';
 import {
+  DraftingPreviewPanel,
+  isDocDraftingConversation,
+  useDraftingSession,
+} from '~/features/agents/doc-drafting';
+import {
   isWillDraftingConversation,
   useWillDownloadUrl,
   WillPreviewPanel,
@@ -19,11 +24,14 @@ export default function Presentation({ children }: { children: React.ReactNode }
   const artifacts = useRecoilValue(store.artifactsState);
   const artifactsVisibility = useRecoilValue(store.artifactsVisibility);
   const { conversation } = useChatContext();
+  const { session: draftingSession } = useDraftingSession();
 
   // Detect Will Drafting conversation and look for generated download URL
   const isWillConvo = isWillDraftingConversation(conversation);
   const convId = (isWillConvo ? conversation?.conversationId : '') ?? '';
   const willDownloadUrl = useWillDownloadUrl(convId);
+  const isDocDraftingConvo = isDocDraftingConversation(conversation, conversation?.model);
+  const docDraftingDownloadUrl = isDocDraftingConvo ? draftingSession.lastDraft?.downloadUrl ?? '' : '';
 
   const setFilesToDelete = useSetFilesToDelete();
 
@@ -93,6 +101,13 @@ export default function Presentation({ children }: { children: React.ReactNode }
     return null;
   }, [willDownloadUrl]);
 
+  const docDraftingPreviewElement = useMemo(() => {
+    if (docDraftingDownloadUrl) {
+      return <DraftingPreviewPanel downloadUrl={docDraftingDownloadUrl} />;
+    }
+    return null;
+  }, [docDraftingDownloadUrl]);
+
   return (
     <DragDropWrapper className="relative flex w-full grow overflow-hidden bg-presentation">
       <SidePanelProvider>
@@ -100,7 +115,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
           defaultLayout={defaultLayout}
           fullPanelCollapse={fullCollapse}
           defaultCollapsed={defaultCollapsed}
-          artifacts={artifactsElement ?? willPreviewElement}
+          artifacts={artifactsElement ?? docDraftingPreviewElement ?? willPreviewElement}
         >
           <main className="flex h-full flex-col overflow-y-auto" role="main">
             {children}

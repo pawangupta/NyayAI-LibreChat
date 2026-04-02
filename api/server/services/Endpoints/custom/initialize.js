@@ -33,6 +33,7 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
 
   const CUSTOM_API_KEY = extractEnvVariable(endpointConfig.apiKey);
   const CUSTOM_BASE_URL = extractEnvVariable(endpointConfig.baseURL);
+  const endpointDefaultModel = endpointConfig.models?.default?.[0];
 
   /** Intentionally excludes passing `body`, i.e. `req.body`, as
    *  values may not be accurate until `AgentClient` is initialized
@@ -140,7 +141,10 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
   };
 
   if (optionsOnly) {
-    const modelOptions = endpointOption?.model_parameters ?? {};
+    const modelOptions = {
+      ...(endpointDefaultModel ? { model: endpointDefaultModel } : {}),
+      ...(endpointOption?.model_parameters ?? {}),
+    };
     clientOptions = Object.assign(
       {
         modelOptions,
@@ -159,6 +163,11 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
     options.llmConfig._lc_stream_delay = clientOptions.streamRate;
     return options;
   }
+
+  clientOptions.modelOptions = {
+    ...(endpointDefaultModel ? { model: endpointDefaultModel } : {}),
+    ...(clientOptions.modelOptions ?? {}),
+  };
 
   const client = new OpenAIClient(apiKey, clientOptions);
   return {

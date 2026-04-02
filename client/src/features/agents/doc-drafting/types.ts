@@ -4,7 +4,9 @@ export type DraftingDocumentType =
   | 'affidavit'
   | 'will'
   | 'power_of_attorney'
+  | 'civil_proceedings'
   | 'income_tax'
+  | 'income_tax_reply'
   | 'writ_petition'
   | 'contract'
   | 'legal_notice'
@@ -20,7 +22,19 @@ export interface DraftingTemplate {
   templateUrl?: string;
   sampleUrl?: string;
   sampleFiles?: string[];
+  subtypes?: DraftingTemplateSubtype[];
   enabled: boolean;
+}
+
+export interface DraftingTemplateSubtype {
+  id: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  templateFileName?: string;
+  supportsUploadDocs?: boolean;
+  uploadDocsOptional?: boolean;
+  acceptedUploadTypes?: string[];
 }
 
 export interface DraftingWorkbookField {
@@ -38,6 +52,7 @@ export interface DraftingParsedWorkbook {
   workbookSummary?: string;
   inferredDocumentType?: DraftingDocumentType;
   affidavitSubtype?: string;
+  incomeTaxReplySubtype?: string;
   requiredFieldCount?: number;
   completedRequiredCount?: number;
   missingRequiredFields?: string[];
@@ -81,6 +96,10 @@ export interface DraftingSessionState {
   selectedDocumentType?: DraftingDocumentType;
   templateDownloaded?: boolean;
   templateDownloadFileName?: string;
+  selectedSubtypeId?: string;
+  supportingUploadNames?: string[];
+  preparedTemplateUrl?: string;
+  preparedTemplateMessage?: string;
   uploadedFileName?: string;
   parsedWorkbook?: DraftingParsedWorkbook;
   validation?: DraftingValidationResult;

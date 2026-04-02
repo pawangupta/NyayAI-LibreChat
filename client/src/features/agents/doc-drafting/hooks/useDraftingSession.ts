@@ -6,6 +6,7 @@ import type {
   DraftingGenerationResponse,
   DraftingParsedWorkbook,
   DraftingStepKey,
+  DraftingTemplateSubtype,
   DraftingValidationResult,
 } from '../types';
 
@@ -21,19 +22,48 @@ export function useDraftingSession() {
           ...prev,
           activeStep: 'download',
           selectedDocumentType,
+          selectedSubtypeId: undefined,
           templateDownloaded: false,
           templateDownloadFileName: undefined,
+          supportingUploadNames: undefined,
+          preparedTemplateUrl: undefined,
+          preparedTemplateMessage: undefined,
           uploadedFileName: undefined,
           parsedWorkbook: undefined,
           validation: undefined,
           lastDraft: undefined,
         })),
-      markTemplateDownloaded: (templateDownloadFileName?: string) =>
+      setSelectedSubtype: (subtype: DraftingTemplateSubtype | undefined) =>
+        setSession((prev) => ({
+          ...prev,
+          activeStep: 'download',
+          selectedSubtypeId: subtype?.id,
+          templateDownloaded: false,
+          templateDownloadFileName: undefined,
+          supportingUploadNames: undefined,
+          preparedTemplateUrl: undefined,
+          preparedTemplateMessage: undefined,
+          uploadedFileName: undefined,
+          parsedWorkbook: undefined,
+          validation: undefined,
+          lastDraft: undefined,
+        })),
+      markTemplateDownloaded: (
+        templateDownloadFileName?: string,
+        options?: {
+          supportingUploadNames?: string[];
+          preparedTemplateUrl?: string;
+          preparedTemplateMessage?: string;
+        },
+      ) =>
         setSession((prev) => ({
           ...prev,
           activeStep: 'upload',
           templateDownloaded: true,
           templateDownloadFileName,
+          supportingUploadNames: options?.supportingUploadNames,
+          preparedTemplateUrl: options?.preparedTemplateUrl,
+          preparedTemplateMessage: options?.preparedTemplateMessage,
         })),
       setParsedWorkbook: (parsedWorkbook: DraftingParsedWorkbook) =>
         setSession((prev) => ({
@@ -41,6 +71,8 @@ export function useDraftingSession() {
           activeStep: 'upload',
           parsedWorkbook,
           uploadedFileName: parsedWorkbook.fileName,
+          preparedTemplateUrl: prev.preparedTemplateUrl,
+          preparedTemplateMessage: prev.preparedTemplateMessage,
           validation: undefined,
           lastDraft: undefined,
         })),
