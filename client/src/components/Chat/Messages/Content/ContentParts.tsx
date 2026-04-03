@@ -18,6 +18,11 @@ import {
   extractLegalResearchPreview,
 } from '~/features/agents/legal-research';
 import { DocDraftingWrapper, extractDocDraftingPreview } from '~/features/agents/doc-drafting';
+import {
+  PageIndexContractWrapper,
+  extractPageIndexContractPreview,
+  extractPageIndexContractRawText,
+} from '~/features/agents/pageindex-contract';
 import MemoryArtifacts from './MemoryArtifacts';
 import type { AgentResponseLayout } from './AgentResponseLayout';
 import Sources from '~/components/Web/Sources';
@@ -103,12 +108,24 @@ const ContentParts = memo(
         return extractDocDraftingPreview({ content });
       }
 
+      if (agentResponseLayout === 'pageindex-contract') {
+        return extractPageIndexContractPreview({ content });
+      }
+
       return '';
     }, [content, agentResponseLayout]);
     const contractRawText = useMemo(
       () =>
         agentResponseLayout === 'contract-review'
           ? extractContractReviewRawText({ content })
+          : '',
+      [content, agentResponseLayout],
+    );
+
+    const pageindexContractRawText = useMemo(
+      () =>
+        agentResponseLayout === 'pageindex-contract'
+          ? extractPageIndexContractRawText({ content })
           : '',
       [content, agentResponseLayout],
     );
@@ -215,6 +232,10 @@ const ContentParts = memo(
           </ContractReviewWrapper>
         ) : agentResponseLayout === 'doc-drafting' ? (
           <DocDraftingWrapper previewText={previewText}>{mainContent}</DocDraftingWrapper>
+        ) : agentResponseLayout === 'pageindex-contract' ? (
+          <PageIndexContractWrapper previewText={previewText} rawText={pageindexContractRawText}>
+            {mainContent}
+          </PageIndexContractWrapper>
         ) : (
           <>
             <MemoryArtifacts attachments={attachments} />

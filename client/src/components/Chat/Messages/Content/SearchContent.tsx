@@ -20,6 +20,11 @@ import {
   extractLegalResearchPreview,
 } from '~/features/agents/legal-research';
 import { DocDraftingWrapper, extractDocDraftingPreview } from '~/features/agents/doc-drafting';
+import {
+  PageIndexContractWrapper,
+  extractPageIndexContractPreview,
+  extractPageIndexContractRawText,
+} from '~/features/agents/pageindex-contract';
 import { getAgentResponseLayout } from './AgentResponseLayout';
 import { UnfinishedMessage } from './MessageContent';
 import Sources from '~/components/Web/Sources';
@@ -62,12 +67,24 @@ const SearchContent = ({
       return extractDocDraftingPreview({ content: message.content, fallbackText: message.text || '' });
     }
 
+    if (agentResponseLayout === 'pageindex-contract') {
+      return extractPageIndexContractPreview({ content: message.content, fallbackText: message.text || '' });
+    }
+
     return '';
   }, [message.content, message.text, agentResponseLayout]);
   const contractRawText = useMemo(
     () =>
       agentResponseLayout === 'contract-review'
         ? extractContractReviewRawText({ content: message.content, fallbackText: message.text || '' })
+        : '',
+    [message.content, message.text, agentResponseLayout],
+  );
+
+  const pageindexContractRawText = useMemo(
+    () =>
+      agentResponseLayout === 'pageindex-contract'
+        ? extractPageIndexContractRawText({ content: message.content, fallbackText: message.text || '' })
         : '',
     [message.content, message.text, agentResponseLayout],
   );
@@ -147,6 +164,10 @@ const SearchContent = ({
           </ContractReviewWrapper>
         ) : agentResponseLayout === 'doc-drafting' ? (
           <DocDraftingWrapper previewText={previewText}>{renderedParts}</DocDraftingWrapper>
+        ) : agentResponseLayout === 'pageindex-contract' ? (
+          <PageIndexContractWrapper previewText={previewText} rawText={pageindexContractRawText}>
+            {renderedParts}
+          </PageIndexContractWrapper>
         ) : (
           <>
             <Sources />
@@ -198,6 +219,16 @@ const SearchContent = ({
     return (
       <SearchContext.Provider value={{ searchResults }}>
         <DocDraftingWrapper previewText={previewText}>{markdownContent}</DocDraftingWrapper>
+      </SearchContext.Provider>
+    );
+  }
+
+  if (agentResponseLayout === 'pageindex-contract') {
+    return (
+      <SearchContext.Provider value={{ searchResults }}>
+        <PageIndexContractWrapper previewText={previewText} rawText={pageindexContractRawText}>
+          {markdownContent}
+        </PageIndexContractWrapper>
       </SearchContext.Provider>
     );
   }

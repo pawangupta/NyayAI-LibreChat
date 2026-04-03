@@ -1,8 +1,13 @@
 import { isContractReviewResponse } from '~/features/agents/contract-review';
 import { isDocDraftingResponse } from '~/features/agents/doc-drafting';
 import { isLegalResearchResponse } from '~/features/agents/legal-research';
+import { isPageIndexContractResponse } from '~/features/agents/pageindex-contract';
 
-export type AgentResponseLayout = 'legal-research' | 'contract-review' | 'doc-drafting';
+export type AgentResponseLayout =
+  | 'legal-research'
+  | 'contract-review'
+  | 'doc-drafting'
+  | 'pageindex-contract';
 
 export function getAgentResponseLayout({
   endpoint,
@@ -41,6 +46,16 @@ export function getAgentResponseLayout({
     })
   ) {
     return 'doc-drafting';
+  }
+
+  if (
+    isPageIndexContractResponse({
+      endpoint,
+      model,
+      isCreatedByUser,
+    })
+  ) {
+    return 'pageindex-contract';
   }
 
   return null;

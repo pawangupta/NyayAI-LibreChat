@@ -137,6 +137,40 @@ endpoints:
         📎 Simply attach your PDF, DOCX, or TXT contract file and tell me what you'd like to do!
 
 
+    # ── PageIndex Contract Analysis ────────────────────────────────────────────
+    - name: "PageIndex Contract Analysis"
+      apiKey: "legal-contract-dev-key"
+      baseURL: "http://host.docker.internal:8001/v1"
+      models:
+        default: ["PageIndex Contract Analysis"]
+        fetch: false
+      modelDisplayLabel: "PageIndex Contract Analysis"
+      group: "Contract Review"
+      titleConvo: true
+      titleModel: "PageIndex Contract Analysis"
+      summarize: false
+      forcePrompt: false
+      dropParams:
+        - user
+        - frequency_penalty
+        - presence_penalty
+        - top_p
+        - stop
+      addParams:
+        max_tokens: 4096
+        temperature: 0.1
+      description: "Ask any question about your contract and get page-linked, evidence-backed findings with a PDF preview"
+      greeting: |
+        👋 Welcome to **PageIndex Contract Analysis**!
+        
+        Upload your contract, then ask any question — for example:
+        - **"What are the termination risks?"**
+        - **"Summarise the confidentiality obligations"**
+        - **"Which clauses create unlimited liability?"**
+        
+        I'll return page-linked findings with a live PDF preview on the right.
+
+
     # ── Legal Research ─────────────────────────────────────────────────────────
     - name: "Legal Research"
       apiKey: "legal-research-dev-key"
