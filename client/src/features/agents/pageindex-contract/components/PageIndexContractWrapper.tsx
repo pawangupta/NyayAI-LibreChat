@@ -1,4 +1,5 @@
-import { useState, useMemo, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
+import { useSetRecoilState } from 'recoil';
 import {
   AlertTriangle,
   BookOpen,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ContentTypes, type TMessageContentParts } from 'librechat-data-provider';
 import { cn } from '~/utils';
+import store from '~/store';
 import {
   isPageIndexContractEndpointName,
   isPageIndexContractModelName,
@@ -379,26 +381,36 @@ export default function PageIndexContractWrapper({
   children: ReactNode;
 }) {
   const payload = useMemo(() => (rawText ? parsePayload(rawText) : null), [rawText]);
+  const setPageIndexPreview = useSetRecoilState(store.pageIndexPreview);
 
-  // Track which page is currently shown in the PDF iframe
+  // Track which page is currently shown in the PDF panel
   const [activePage, setActivePage] = useState<number | null>(() => {
     if (!payload) return null;
     const firstPage = payload.findings?.[0]?.pages?.[0];
     return firstPage ?? 1;
   });
 
-  // Build the iframe URL
-  const iframeSrc = useMemo(() => {
+  // Build the base preview URL (no fragment — fragment added in the panel)
+  const previewPath = useMemo(() => {
     if (!payload?.preview_path) return null;
-    const base = payload.preview_path.startsWith('/')
+    return payload.preview_path.startsWith('/')
       ? `${window.location.protocol}//${window.location.host}${payload.preview_path}`
       : payload.preview_path;
-    return activePage != null ? `${base}#page=${activePage}` : base;
-  }, [payload, activePage]);
+  }, [payload]);
+
+  // Sync PDF state into the shared Recoil atom so the side panel can render it
+  useEffect(() => {
+    if (previewPath) {
+      setPageIndexPreview({
+        previewPath,
+        activePage,
+        docName: payload?.document_name || 'Contract',
+      });
+    }
+  }, [previewPath, activePage, payload?.document_name, setPageIndexPreview]);
 
   function handlePageClick(page: number) {
     setActivePage(page);
-    // Force iframe reload to the new page hash by updating state
   }
 
   // ── When no payload is found, fall through to the default markdown render ──
@@ -421,14 +433,8 @@ export default function PageIndexContractWrapper({
   );
 
   return (
-    <div
-      className="flex w-full flex-col gap-0 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/50 shadow-md dark:border-stone-700 dark:bg-[#1a1714]"
-      style={{
-        width: 'min(calc(100vw - 2.5rem), 1600px)',
-        marginLeft: 'calc((100% - min(calc(100vw - 2.5rem), 1600px)) / 2)',
-      }}
-    >
-      {/* ── Header ──────────────────────────────────────────────────── */}
+    <div className="flex w-full flex-col gap-0 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/50 shadow-md dark:border-stone-700 dark:bg-[#1a1714]">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 bg-white/80 px-6 py-4 dark:border-stone-700 dark:bg-stone-900/60">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/40">
@@ -448,7 +454,7 @@ export default function PageIndexContractWrapper({
         </div>
 
         {/* Risk counts */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {(['High', 'Medium', 'Low'] as RiskLevel[]).map((level) =>
             counts[level] ? (
               <span
@@ -467,98 +473,50 @@ export default function PageIndexContractWrapper({
         </div>
       </div>
 
-      {/* ── Body: split pane ────────────────────────────────────────── */}
-      <div className="flex min-h-[600px] flex-col gap-0 lg:flex-row">
-        {/* Left pane: findings */}
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 lg:max-h-[820px]">
-          {/* Question */}
-          {payload.question ? (
-            <div className="flex gap-2 rounded-xl bg-indigo-50/70 px-4 py-3 dark:bg-indigo-950/30">
-              <BookOpen className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-500 dark:text-indigo-400" />
-              <p
-                className="text-[0.88rem] leading-6 text-indigo-800 dark:text-indigo-300"
-                style={bodyFont}
-              >
-                {payload.question}
-              </p>
-            </div>
-          ) : null}
-
-          {/* Executive summary */}
-          {payload.executive_summary ? (
-            <div className="rounded-xl bg-white/80 px-5 py-4 shadow-sm dark:bg-stone-800/50">
-              <p
-                className="text-sm font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500"
-                style={labelFont}
-              >
-                Summary
-              </p>
-              <p
-                className="mt-2 text-[0.92rem] leading-6 text-stone-700 dark:text-[#cfc4b5]"
-                style={bodyFont}
-              >
-                {payload.executive_summary}
-              </p>
-            </div>
-          ) : null}
-
-          {/* Findings */}
-          {findings.length > 0 ? (
-            <div className="space-y-3">
-              <h3
-                className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400"
-                style={labelFont}
-              >
-                <AlertTriangle className="h-4 w-4" />
-                Findings ({findings.length})
-              </h3>
-              {findings.map((f) => (
-                <FindingCard
-                  key={f.id}
-                  finding={f}
-                  docName={docName}
-                  activePage={activePage}
-                  onPageClick={handlePageClick}
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {/* Summary table */}
-          <SummaryTable rows={summaryTable} />
-        </div>
-
-        {/* Right pane: PDF preview */}
-        {iframeSrc ? (
-          <div className="flex flex-col border-l border-stone-200 dark:border-stone-700 lg:w-[42%]">
-            <div className="flex items-center justify-between border-b border-stone-200 bg-white/60 px-4 py-2.5 dark:border-stone-700 dark:bg-stone-900/40">
-              <span className="text-xs font-medium text-stone-500 dark:text-stone-400" style={labelFont}>
-                PDF Preview
-                {activePage != null ? (
-                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                    p.{activePage}
-                  </span>
-                ) : null}
-              </span>
-              <a
-                href={iframeSrc}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                style={labelFont}
-              >
-                Open ↗
-              </a>
-            </div>
-            <iframe
-              key={iframeSrc}
-              src={iframeSrc}
-              title={`PDF preview – ${docName}`}
-              className="flex-1 border-0"
-              style={{ minHeight: 720 }}
-            />
+      {/* Findings body */}
+      <div className="flex flex-col gap-4 px-6 py-5">
+        {payload.question ? (
+          <div className="flex gap-2 rounded-xl bg-indigo-50/70 px-4 py-3 dark:bg-indigo-950/30">
+            <BookOpen className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-500 dark:text-indigo-400" />
+            <p className="text-[0.88rem] leading-6 text-indigo-800 dark:text-indigo-300" style={bodyFont}>
+              {payload.question}
+            </p>
           </div>
         ) : null}
+
+        {payload.executive_summary ? (
+          <div className="rounded-xl bg-white/80 px-5 py-4 shadow-sm dark:bg-stone-800/50">
+            <p className="text-sm font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500" style={labelFont}>
+              Summary
+            </p>
+            <p className="mt-2 text-[0.92rem] leading-6 text-stone-700 dark:text-[#cfc4b5]" style={bodyFont}>
+              {payload.executive_summary}
+            </p>
+          </div>
+        ) : null}
+
+        {findings.length > 0 ? (
+          <div className="space-y-3">
+            <h3
+              className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400"
+              style={labelFont}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Findings ({findings.length})
+            </h3>
+            {findings.map((f) => (
+              <FindingCard
+                key={f.id}
+                finding={f}
+                docName={docName}
+                activePage={activePage}
+                onPageClick={handlePageClick}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <SummaryTable rows={summaryTable} />
       </div>
     </div>
   );

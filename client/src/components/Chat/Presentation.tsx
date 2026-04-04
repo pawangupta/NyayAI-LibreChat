@@ -16,9 +16,13 @@ import {
   useWillDownloadUrl,
   WillPreviewPanel,
 } from '~/features/agents/wills';
+import {
+  isPageIndexContractConversation,
+  PageIndexPreviewPanel,
+} from '~/features/agents/pageindex-contract';
+import store from '~/store';
 import { SidePanelGroup } from '~/components/SidePanel';
 import { useSetFilesToDelete } from '~/hooks';
-import store from '~/store';
 
 export default function Presentation({ children }: { children: React.ReactNode }) {
   const artifacts = useRecoilValue(store.artifactsState);
@@ -32,6 +36,10 @@ export default function Presentation({ children }: { children: React.ReactNode }
   const willDownloadUrl = useWillDownloadUrl(convId);
   const isDocDraftingConvo = isDocDraftingConversation(conversation, conversation?.model);
   const docDraftingDownloadUrl = isDocDraftingConvo ? draftingSession.lastDraft?.downloadUrl ?? '' : '';
+
+  // Detect PageIndex Contract Analysis conversation
+  const isPageIndexConvo = isPageIndexContractConversation(conversation, conversation?.model);
+  const pageIndexPreview = useRecoilValue(store.pageIndexPreview);
 
   const setFilesToDelete = useSetFilesToDelete();
 
@@ -108,6 +116,14 @@ export default function Presentation({ children }: { children: React.ReactNode }
     return null;
   }, [docDraftingDownloadUrl]);
 
+  /** Show the Contract Preview panel when a PageIndex analysis result has a PDF */
+  const pageIndexPreviewElement = useMemo(() => {
+    if (isPageIndexConvo && pageIndexPreview?.previewPath) {
+      return <PageIndexPreviewPanel />;
+    }
+    return null;
+  }, [isPageIndexConvo, pageIndexPreview]);
+
   return (
     <DragDropWrapper className="relative flex w-full grow overflow-hidden bg-presentation">
       <SidePanelProvider>
@@ -115,7 +131,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
           defaultLayout={defaultLayout}
           fullPanelCollapse={fullCollapse}
           defaultCollapsed={defaultCollapsed}
-          artifacts={artifactsElement ?? docDraftingPreviewElement ?? willPreviewElement}
+          artifacts={artifactsElement ?? pageIndexPreviewElement ?? docDraftingPreviewElement ?? willPreviewElement}
         >
           <main className="flex h-full flex-col overflow-y-auto" role="main">
             {children}

@@ -15,3 +15,5 @@ export {
   extractPageIndexContractRawText,
   isPageIndexContractResponse,
 } from './components/PageIndexContractWrapper';
+export { default as PageIndexPreviewPanel } from './components/PageIndexPreviewPanel';
+export { isPageIndexContractConversation } from './lib/isPageIndexContractConversation';
