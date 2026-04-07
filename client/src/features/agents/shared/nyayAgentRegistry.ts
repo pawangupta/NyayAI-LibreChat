@@ -17,12 +17,6 @@ import {
   LEGAL_RESEARCH_NAV_SECTION,
 } from '../legal-research/config';
 import {
-  WILLS_LABEL,
-  WILLS_NAV_SECTION,
-  WILLS_PRIMARY_ENDPOINT,
-  WILLS_PRIMARY_MODEL,
-} from '../wills/config';
-import {
   DOC_DRAFTING_LABEL,
   DOC_DRAFTING_PRIMARY_ENDPOINT,
   DOC_DRAFTING_PRIMARY_MODEL,
@@ -42,15 +36,10 @@ export interface NavSection {
 
 export const NYAY_NAV_CONFIG: NavSection[] = [
   {
-    sectionLabel: WILLS_NAV_SECTION,
+    sectionLabel: DOC_DRAFTING_LABEL,
     iconPath:
       'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
     items: [
-      {
-        label: WILLS_LABEL,
-        endpointName: WILLS_PRIMARY_ENDPOINT,
-        model: WILLS_PRIMARY_MODEL,
-      },
       {
         label: DOC_DRAFTING_LABEL,
         endpointName: DOC_DRAFTING_PRIMARY_ENDPOINT,
@@ -90,7 +79,6 @@ export const NYAY_NAV_CONFIG: NavSection[] = [
 ];
 
 export const NYAY_ENDPOINT_LABELS: Record<string, string> = {
-  [WILLS_PRIMARY_ENDPOINT]: WILLS_LABEL,
   [DOC_DRAFTING_PRIMARY_ENDPOINT]: DOC_DRAFTING_LABEL,
   [CONTRACT_REVIEW_PRIMARY_ENDPOINT]: CONTRACT_REVIEW_LABEL,
   [PAGEINDEX_CONTRACT_PRIMARY_ENDPOINT]: PAGEINDEX_CONTRACT_LABEL,

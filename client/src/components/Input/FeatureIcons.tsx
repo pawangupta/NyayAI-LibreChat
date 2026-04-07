@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useRecoilValue } from 'recoil';
-import { FileText, Scale, FileSignature } from 'lucide-react';
+import { FileText, Scale } from 'lucide-react';
 import { useGetEndpointsQuery } from '~/data-provider';
 import {
   CONTRACT_REVIEW_LABEL,
@@ -11,7 +11,6 @@ import {
   DOC_DRAFTING_LABEL,
   resolveDocDraftingEndpointName,
 } from '~/features/agents/doc-drafting';
-import { resolveWillsEndpointName, WILLS_DESCRIPTION, WILLS_LABEL } from '~/features/agents/wills';
 import { cn } from '~/utils';
 import store from '~/store';
 
@@ -28,20 +27,11 @@ const FeatureIcons = memo(() => {
   const { data: endpointsConfig } = useGetEndpointsQuery();
   const conversation = useRecoilValue(store.conversationByIndex(0)) || {};
   const endpoints = endpointsConfig?.endpoints;
-  const willsEndpoint = resolveWillsEndpointName(endpoints);
   const docDraftingEndpoint = resolveDocDraftingEndpointName(endpoints);
   const contractReviewEndpoint = resolveContractReviewEndpointName(endpoints);
 
   // Parse feature icons from LibreChat.yaml configuration
   const featureIcons: FeatureIcon[] = [
-    {
-      id: 'willgen',
-      label: WILLS_LABEL,
-      icon: FileSignature,
-      endpoint: willsEndpoint ?? '',
-      description: WILLS_DESCRIPTION,
-      enabled: Boolean(willsEndpoint),
-    },
     {
       id: 'doc-drafting',
       label: DOC_DRAFTING_LABEL,

@@ -427,6 +427,12 @@ export default function DraftingWorkbookPanel() {
     }).format(date);
   }, [session.lastDraft?.generatedAt]);
 
+  const showDownloadStep = Boolean(session.selectedDocumentType);
+  const showUploadStep = Boolean(
+    session.templateDownloaded || parsedWorkbook || session.validation || session.lastDraft,
+  );
+  const showGenerateStep = Boolean(session.validation?.valid || session.lastDraft);
+
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -610,169 +616,172 @@ export default function DraftingWorkbookPanel() {
         </div>
       )}
 
-      <WorkflowCard
-        stepNumber={2}
-        title="Download Template"
-        description="Choose the template sub-type, optionally upload supporting documents where applicable, then download the workbook for Step 3."
-        isActive={session.activeStep === 'download'}
-        isComplete={Boolean(session.templateDownloaded)}
-      >
-        {!selectedTemplate ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 text-sm text-slate-600 dark:border-white/10 dark:bg-[#1b1814] dark:text-[#b8afa3]">
-            Select a document type in Step 1 to unlock template downloads.
-          </div>
-        ) : (
-          <>
-            <div className="rounded-xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/10 dark:bg-[#1b1814]">
-              <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">{selectedTemplate.label}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-[#b8afa3]">{selectedTemplate.description}</p>
-              {selectedTemplate.subtypes?.length ? (
-                <div className="mt-4 space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-[#a79d90]">
-                    Available doc sub-types
-                  </p>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {selectedTemplate.subtypes.map((subtype) => {
-                      const isSelected = effectiveSubtype?.id === subtype.id;
-                      return (
-                        <button
-                          key={subtype.id}
-                          type="button"
-                          disabled={!subtype.enabled}
-                          onClick={() => setSelectedSubtype(subtype)}
-                          className={cn(
-                            'rounded-xl border px-4 py-3 text-left transition-all',
-                            isSelected
-                              ? 'border-slate-900 bg-slate-900 text-white dark:border-[#d2b36c] dark:bg-[#221d16]'
-                              : 'border-slate-200 bg-white text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-[#f3efe5]',
-                            !subtype.enabled && 'cursor-not-allowed opacity-50',
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold">{subtype.label}</p>
-                            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                              {isSelected ? 'Selected' : subtype.enabled ? 'Ready' : 'Soon'}
-                            </span>
-                          </div>
-                          {subtype.description && (
-                            <p className={cn('mt-2 text-xs leading-5', isSelected ? 'text-white/80' : 'text-slate-600 dark:text-[#b8afa3]')}>
-                              {subtype.description}
-                            </p>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              {effectiveSubtype?.supportsUploadDocs ? (
-                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5">
-                  <input
-                    ref={supportingDocsRef}
-                    type="file"
-                    multiple
-                    accept={(effectiveSubtype.acceptedUploadTypes ?? []).join(',')}
-                    className="hidden"
-                    onChange={handleSupportingFilesChange}
-                  />
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">Optional upload docs</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-[#b8afa3]">
-                        Upload the notice or supporting document if you want NyayAI to pre-fill the template before download. If no document is uploaded, the standard blank template will be provided.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={!stepTwoReady || session.isLoading}
-                      onClick={() => supportingDocsRef.current?.click()}
-                      className={cn(
-                        'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium',
-                        stepTwoReady && !session.isLoading
-                          ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-[#221d16] dark:text-[#f3efe5]'
-                          : 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-[#8f887c]',
-                      )}
-                    >
-                      <FilePlus2 className="h-4 w-4" />
-                      Upload docs
-                    </button>
-                  </div>
-                  {supportingFiles.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {supportingFiles.map((file) => (
-                        <span
-                          key={`${file.name}-${file.size}`}
-                          className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-white/10 dark:bg-[#221d16] dark:text-[#d0c5b7]"
-                        >
-                          {file.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              {session.templateDownloaded && (
-                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-100">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {session.templateDownloadFileName ?? 'Template'} downloaded
-                </p>
-              )}
-              {session.preparedTemplateMessage && (
-                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-[#d0c5b7]">
-                  {session.preparedTemplateMessage}
-                </div>
-              )}
+      {showDownloadStep && (
+        <WorkflowCard
+          stepNumber={2}
+          title="Download Template"
+          description="Choose the template sub-type, optionally upload supporting documents where applicable, then download the workbook for Step 3."
+          isActive={session.activeStep === 'download'}
+          isComplete={Boolean(session.templateDownloaded)}
+        >
+          {!selectedTemplate ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 text-sm text-slate-600 dark:border-white/10 dark:bg-[#1b1814] dark:text-[#b8afa3]">
+              Select a document type in Step 1 to unlock template downloads.
             </div>
+          ) : (
+            <>
+              <div className="rounded-xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/10 dark:bg-[#1b1814]">
+                <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">{selectedTemplate.label}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-[#b8afa3]">{selectedTemplate.description}</p>
+                {selectedTemplate.subtypes?.length ? (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-[#a79d90]">
+                      Available doc sub-types
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {selectedTemplate.subtypes.map((subtype) => {
+                        const isSelected = effectiveSubtype?.id === subtype.id;
+                        return (
+                          <button
+                            key={subtype.id}
+                            type="button"
+                            disabled={!subtype.enabled}
+                            onClick={() => setSelectedSubtype(subtype)}
+                            className={cn(
+                              'rounded-xl border px-4 py-3 text-left transition-all',
+                              isSelected
+                                ? 'border-slate-900 bg-slate-900 text-white dark:border-[#d2b36c] dark:bg-[#221d16]'
+                                : 'border-slate-200 bg-white text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-[#f3efe5]',
+                              !subtype.enabled && 'cursor-not-allowed opacity-50',
+                            )}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold">{subtype.label}</p>
+                              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                                {isSelected ? 'Selected' : subtype.enabled ? 'Ready' : 'Soon'}
+                              </span>
+                            </div>
+                            {subtype.description && (
+                              <p className={cn('mt-2 text-xs leading-5', isSelected ? 'text-white/80' : 'text-slate-600 dark:text-[#b8afa3]')}>
+                                {subtype.description}
+                              </p>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
 
-            {sampleDownloads.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {sampleDownloads.map((sample) => {
-                  const disabled = !stepTwoReady;
+                {effectiveSubtype?.supportsUploadDocs ? (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5">
+                    <input
+                      ref={supportingDocsRef}
+                      type="file"
+                      multiple
+                      accept={(effectiveSubtype.acceptedUploadTypes ?? []).join(',')}
+                      className="hidden"
+                      onChange={handleSupportingFilesChange}
+                    />
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-[#f3efe5]">Optional upload docs</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-[#b8afa3]">
+                          Upload the notice or supporting document if you want NyayAI to pre-fill the template before download. If no document is uploaded, the standard blank template will be provided.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!stepTwoReady || session.isLoading}
+                        onClick={() => supportingDocsRef.current?.click()}
+                        className={cn(
+                          'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium',
+                          stepTwoReady && !session.isLoading
+                            ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-[#221d16] dark:text-[#f3efe5]'
+                            : 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-[#8f887c]',
+                        )}
+                      >
+                        <FilePlus2 className="h-4 w-4" />
+                        Upload docs
+                      </button>
+                    </div>
+                    {supportingFiles.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {supportingFiles.map((file) => (
+                          <span
+                            key={`${file.name}-${file.size}`}
+                            className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-white/10 dark:bg-[#221d16] dark:text-[#d0c5b7]"
+                          >
+                            {file.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
 
-                  return (
-                    <button
-                      key={sample.fileName}
-                      type="button"
-                      onClick={(event) => {
-                        if (disabled) {
-                          event.preventDefault();
-                          return;
-                        }
-
-                        void handleTemplateDownload(sample.fileName);
-                      }}
-                      aria-disabled={disabled}
-                      className={cn(
-                        'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em]',
-                        disabled
-                          ? 'pointer-events-none cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-[#7f786d]'
-                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-[#221d16] dark:text-[#f3efe5]',
-                      )}
-                    >
-                      {disabled ? <Lock className="h-3.5 w-3.5" /> : <FileDown className="h-3.5 w-3.5" />}
-                      {sample.label}
-                    </button>
-                  );
-                })}
+                {session.templateDownloaded && (
+                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-100">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {session.templateDownloadFileName ?? 'Template'} downloaded
+                  </p>
+                )}
+                {session.preparedTemplateMessage && (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-[#d0c5b7]">
+                    {session.preparedTemplateMessage}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                No template files are configured for this document yet.
-              </div>
-            )}
-          </>
-        )}
-      </WorkflowCard>
 
-      <WorkflowCard
-        stepNumber={3}
-        title="Upload and validate"
-        description="Upload the completed workbook, review the captured fields, and validate the required inputs."
-        isActive={session.activeStep === 'upload'}
-        isComplete={Boolean(session.validation?.valid)}
-      >
+              {sampleDownloads.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {sampleDownloads.map((sample) => {
+                    const disabled = !stepTwoReady;
+
+                    return (
+                      <button
+                        key={sample.fileName}
+                        type="button"
+                        onClick={(event) => {
+                          if (disabled) {
+                            event.preventDefault();
+                            return;
+                          }
+
+                          void handleTemplateDownload(sample.fileName);
+                        }}
+                        aria-disabled={disabled}
+                        className={cn(
+                          'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em]',
+                          disabled
+                            ? 'pointer-events-none cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-[#7f786d]'
+                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-[#221d16] dark:text-[#f3efe5]',
+                        )}
+                      >
+                        {disabled ? <Lock className="h-3.5 w-3.5" /> : <FileDown className="h-3.5 w-3.5" />}
+                        {sample.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  No template files are configured for this document yet.
+                </div>
+              )}
+            </>
+          )}
+        </WorkflowCard>
+      )}
+
+      {showUploadStep && (
+        <WorkflowCard
+          stepNumber={3}
+          title="Upload and validate"
+          description="Upload the completed workbook, review the captured fields, and validate the required inputs."
+          isActive={session.activeStep === 'upload'}
+          isComplete={Boolean(session.validation?.valid)}
+        >
         <input
           ref={inputRef}
           type="file"
@@ -1082,15 +1091,17 @@ export default function DraftingWorkbookPanel() {
             )}
           </div>
         )}
-      </WorkflowCard>
+        </WorkflowCard>
+      )}
 
-      <WorkflowCard
-        stepNumber={4}
-        title="Generate and preview"
-        description="After validation passes, generate the draft, review the preview, and download the DOCX output."
-        isActive={session.activeStep === 'generate'}
-        isComplete={Boolean(session.lastDraft)}
-      >
+      {showGenerateStep && (
+        <WorkflowCard
+          stepNumber={4}
+          title="Generate and preview"
+          description="After validation passes, generate the draft, review the preview, and download the DOCX output."
+          isActive={session.activeStep === 'generate'}
+          isComplete={Boolean(session.lastDraft)}
+        >
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-[#a79d90]">
             Drafting instructions
@@ -1282,7 +1293,8 @@ export default function DraftingWorkbookPanel() {
             </details>
           </div>
         )}
-      </WorkflowCard>
+        </WorkflowCard>
+      )}
     </div>
   );
 }

@@ -3,15 +3,19 @@ type EndpointLike = { name: string };
 const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? '';
 
 export const CONTRACT_REVIEW_PRIMARY_ENDPOINT = 'Contract Review';
-export const CONTRACT_REVIEW_ENDPOINT_ALIASES = ['Contract Review', 'LegalContract'] as const;
+export const CONTRACT_REVIEW_ENDPOINT_ALIASES = [
+  'Contract Review',
+  'Tabular Review',
+  'LegalContract',
+] as const;
 export const CONTRACT_REVIEW_PRIMARY_MODEL = 'Tabular Contract Review';
 export const CONTRACT_REVIEW_MODEL_ALIASES = [
   'Tabular Contract Review',
   'Legal Contract Analyzer',
   'Comprehensive Contract Review',
 ] as const;
-export const CONTRACT_REVIEW_LABEL = 'Contract Review';
-export const CONTRACT_REVIEW_NAV_SECTION = 'Contract Review';
+export const CONTRACT_REVIEW_LABEL = 'Tabular Review';
+export const CONTRACT_REVIEW_NAV_SECTION = 'Tabular Review';
 
 const CONTRACT_REVIEW_ENDPOINT_SET = new Set(
   CONTRACT_REVIEW_ENDPOINT_ALIASES.map((value) => normalize(value)),

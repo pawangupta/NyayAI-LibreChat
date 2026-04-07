@@ -108,7 +108,7 @@ endpoints:
         fetch: false
       modelDisplayLabel: "Tabular Contract Review"
       # ── NyayAI nav: section header label shown in the sidebar ──────────────
-      group: "Contract Review"
+      group: "Tabular Review"
       titleConvo: true
       titleModel: "Tabular Contract Review"
       summarize: false
@@ -145,7 +145,7 @@ endpoints:
         default: ["PageIndex Contract Analysis"]
         fetch: false
       modelDisplayLabel: "PageIndex Contract Analysis"
-      group: "Contract Review"
+      group: "Tabular Review"
       titleConvo: true
       titleModel: "PageIndex Contract Analysis"
       summarize: false
