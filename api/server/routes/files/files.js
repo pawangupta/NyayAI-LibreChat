@@ -1,5 +1,7 @@
+const path = require('path');
 const fs = require('fs').promises;
 const express = require('express');
+const { sanitizeFilename } = require('@librechat/api');
 const { EnvVar } = require('@librechat/agents');
 const { logger } = require('@librechat/data-schemas');
 const {
@@ -7,6 +9,7 @@ const {
   isUUID,
   CacheKeys,
   FileSources,
+  FileContext,
   ResourceType,
   EModelEndpoint,
   PermissionBits,
@@ -26,14 +29,537 @@ const { checkPermission } = require('~/server/services/PermissionService');
 const { loadAuthValues } = require('~/server/services/Tools/credentials');
 const { refreshS3FileUrls } = require('~/server/services/Files/S3/crud');
 const { hasAccessToFilesViaAgent } = require('~/server/services/Files');
-const { getFiles, batchUpdateFiles } = require('~/models/File');
+const { getFiles, batchUpdateFiles, createFile } = require('~/models/File');
 const { cleanFileName } = require('~/server/utils/files');
 const { getAssistant } = require('~/models/Assistant');
 const { getAgent } = require('~/models/Agent');
 const { getLogStores } = require('~/cache');
+const FileFolder = require('~/models/FileFolder');
+const { File } = require('~/db/models');
 const { Readable } = require('stream');
 
 const router = express.Router();
+
+const FILE_MANAGER_METADATA_PATH = 'metadata.fileManager';
+const FILE_MANAGER_FOLDER_PATH = `${FILE_MANAGER_METADATA_PATH}.folderId`;
+const FILE_MANAGER_ALLOWED_EXTENSIONS = new Set([
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.ppt',
+  '.pptx',
+  '.xls',
+  '.xlsx',
+  '.csv',
+  '.txt',
+  '.png',
+  '.jpg',
+  '.jpeg',
+]);
+
+const normalizeFolderName = (name = '') => name.trim().replace(/\s+/g, ' ').toLowerCase();
+
+const mapManagedFile = (file, folderName = null) => ({
+  id: file.file_id,
+  file_id: file.file_id,
+  filename: file.filename,
+  type: file.type,
+  size: file.bytes ?? 0,
+  status: 'active',
+  folder_id: file?.metadata?.fileManager?.folderId ?? null,
+  folder_name: folderName,
+  filepath: file.filepath,
+  source: file.source,
+  metadata: file.metadata,
+  height: file.height,
+  width: file.width,
+  created_at: file.createdAt,
+  updated_at: file.updatedAt,
+});
+
+const buildFolderTree = (folders, counts) => {
+  const nodes = new Map();
+  const roots = [];
+
+  for (const folder of folders) {
+    const id = folder._id.toString();
+    nodes.set(id, {
+      id,
+      name: folder.name,
+      parent_id: folder.parentId,
+      created_at: folder.createdAt,
+      children: [],
+      file_count: counts.get(id) ?? 0,
+    });
+  }
+
+  for (const folder of folders) {
+    const id = folder._id.toString();
+    const node = nodes.get(id);
+    if (folder.parentId && nodes.has(folder.parentId)) {
+      nodes.get(folder.parentId).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const sortNodes = (items) => {
+    items.sort((a, b) => a.name.localeCompare(b.name));
+    items.forEach((item) => sortNodes(item.children));
+  };
+
+  sortNodes(roots);
+
+  roots.push({
+    id: null,
+    name: 'Unfiled',
+    parent_id: null,
+    created_at: null,
+    children: [],
+    file_count: counts.get(null) ?? 0,
+    virtual: true,
+  });
+
+  return roots;
+};
+
+const getManagedFileFilter = (userId, folderId, queryText, scopedFolderIds) => {
+  const filter = {
+    user: reqUserIdToObject(userId),
+    context: FileContext.message_attachment,
+  };
+
+  if (folderId === 'root') {
+    filter[FILE_MANAGER_FOLDER_PATH] = '__root__';
+  } else if (folderId === 'unfiled') {
+    filter.$or = [
+      { [FILE_MANAGER_FOLDER_PATH]: null },
+      { [FILE_MANAGER_FOLDER_PATH]: { $exists: false } },
+    ];
+  } else if (Array.isArray(scopedFolderIds) && scopedFolderIds.length > 0) {
+    filter[FILE_MANAGER_FOLDER_PATH] = { $in: scopedFolderIds };
+  } else if (folderId) {
+    filter[FILE_MANAGER_FOLDER_PATH] = folderId;
+  }
+
+  if (queryText) {
+    filter.filename = { $regex: queryText, $options: 'i' };
+  }
+
+  return filter;
+};
+
+const collectDescendantFolderIds = (folders, rootFolderId) => {
+  if (!rootFolderId) {
+    return [];
+  }
+
+  const childMap = new Map();
+  for (const folder of folders) {
+    const parentId = folder.parentId ?? null;
+    const currentFolderId = folder._id.toString();
+    if (!childMap.has(parentId)) {
+      childMap.set(parentId, []);
+    }
+    childMap.get(parentId).push(currentFolderId);
+  }
+
+  const visited = new Set();
+  const stack = [rootFolderId];
+
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+    if (!currentId || visited.has(currentId)) {
+      continue;
+    }
+
+    visited.add(currentId);
+    const childIds = childMap.get(currentId) ?? [];
+    childIds.forEach((childId) => stack.push(childId));
+  }
+
+  return Array.from(visited);
+};
+function reqUserIdToObject(userId) {
+  return userId;
+}
+
+async function assertFolderOwnership(userId, folderId) {
+  const folder = await FileFolder.findOne({ _id: folderId, user: userId }).lean();
+  if (!folder) {
+    const error = new Error('Folder not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  return folder;
+}
+
+async function getFolderCounts(userId) {
+  const rows = await File.aggregate([
+    {
+      $match: {
+        user: reqUserIdToObject(userId),
+        context: FileContext.message_attachment,
+      },
+    },
+    {
+      $group: {
+        _id: `$${FILE_MANAGER_FOLDER_PATH}`,
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return new Map(rows.map((row) => [row._id ?? null, row.count]));
+}
+
+async function validateFolderDepth(userId, parentId) {
+  if (!parentId) {
+    return 0;
+  }
+
+  const parent = await assertFolderOwnership(userId, parentId);
+  const depth = (parent.depth ?? 0) + 1;
+  if (depth > 9) {
+    const error = new Error('Maximum folder depth reached');
+    error.statusCode = 422;
+    throw error;
+  }
+
+  return depth;
+}
+
+async function uploadManagedFile(req) {
+  if (!req.file) {
+    const error = new Error('No file provided');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const originalName = decodeURIComponent(req.file.originalname || '');
+  const sanitizedName = sanitizeFilename(originalName);
+  const extension = path.extname(sanitizedName).toLowerCase();
+
+  if (
+    !sanitizedName ||
+    sanitizedName !== path.basename(sanitizedName) ||
+    sanitizedName.includes('..') ||
+    !FILE_MANAGER_ALLOWED_EXTENSIONS.has(extension)
+  ) {
+    const error = new Error('File type or name is not allowed');
+    error.statusCode = 422;
+    throw error;
+  }
+
+  const folderId = req.body?.folder_id || req.query?.folder_id || null;
+  if (folderId) {
+    await assertFolderOwnership(req.user.id, folderId);
+  }
+
+  const source = req.config.fileStrategy ?? FileSources.local;
+  const { handleFileUpload } = getStrategyFunctions(source);
+
+  if (!handleFileUpload) {
+    const error = new Error(`Upload is not available for ${source}`);
+    error.statusCode = 501;
+    throw error;
+  }
+
+  const uploadResult = await handleFileUpload({
+    req,
+    file: {
+      ...req.file,
+      originalname: sanitizedName,
+    },
+    file_id: req.file_id,
+    basePath: req.file.mimetype.startsWith('image/') ? 'images' : 'uploads',
+  });
+
+  return createFile(
+    {
+      user: req.user.id,
+      file_id: req.file_id,
+      bytes: uploadResult.bytes,
+      filepath: uploadResult.filepath,
+      filename: uploadResult.filename ?? sanitizedName,
+      context: FileContext.message_attachment,
+      type: req.file.mimetype,
+      embedded: uploadResult.embedded,
+      source,
+      height: uploadResult.height,
+      width: uploadResult.width,
+      metadata: {
+        fileManager: {
+          folderId,
+        },
+      },
+    },
+    true,
+  );
+}
+
+router.get('/folders', async (req, res) => {
+  try {
+    const folders = await FileFolder.find({ user: req.user.id }).sort({ name: 1 }).lean();
+    const counts = await getFolderCounts(req.user.id);
+    res.status(200).json(buildFolderTree(folders, counts));
+  } catch (error) {
+    logger.error('[/files/folders] Error getting folders:', error);
+    res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || 'Failed to load folders' });
+  }
+});
+
+router.post('/folders', async (req, res) => {
+  try {
+    const name = String(req.body?.name || '').trim();
+    const parentId = req.body?.parent_id || null;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Folder name is required' });
+    }
+
+    const normalizedName = normalizeFolderName(name);
+    const depth = await validateFolderDepth(req.user.id, parentId);
+
+    const existing = await FileFolder.findOne({
+      user: req.user.id,
+      parentId,
+      normalizedName,
+    }).lean();
+
+    if (existing) {
+      return res.status(409).json({ message: 'A folder with this name already exists' });
+    }
+
+    const folder = await FileFolder.create({
+      user: req.user.id,
+      name,
+      normalizedName,
+      parentId,
+      depth,
+    });
+
+    res.status(201).json({
+      id: folder._id.toString(),
+      name: folder.name,
+      parent_id: folder.parentId,
+      created_at: folder.createdAt,
+      children: [],
+      file_count: 0,
+    });
+  } catch (error) {
+    logger.error('[/files/folders] Error creating folder:', error);
+    res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || 'Failed to create folder' });
+  }
+});
+
+router.delete('/folders/:folderId', async (req, res) => {
+  try {
+    const { folderId } = req.params;
+    const folder = await assertFolderOwnership(req.user.id, folderId);
+    const childCount = await FileFolder.countDocuments({ user: req.user.id, parentId: folderId });
+
+    if (childCount > 0) {
+      return res.status(409).json({ message: 'Delete child folders first' });
+    }
+
+    const updateResult = await File.updateMany(
+      {
+        user: req.user.id,
+        context: FileContext.message_attachment,
+        [FILE_MANAGER_FOLDER_PATH]: folderId,
+      },
+      {
+        $set: {
+          [FILE_MANAGER_FOLDER_PATH]: null,
+        },
+      },
+    );
+
+    await FileFolder.deleteOne({ _id: folder._id, user: req.user.id });
+
+    res.status(200).json({ deleted: true, orphaned_files: updateResult.modifiedCount ?? 0 });
+  } catch (error) {
+    logger.error('[/files/folders/:folderId] Error deleting folder:', error);
+    res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || 'Failed to delete folder' });
+  }
+});
+
+router.get('/manager', async (req, res) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const folderId = typeof req.query.folder_id === 'string' ? req.query.folder_id : undefined;
+    const queryText = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const sort = typeof req.query.sort === 'string' ? req.query.sort : 'created_at_desc';
+    const includeDescendants = req.query.include_descendants === 'true';
+    const skip = (page - 1) * limit;
+    const sortMap = {
+      created_at_desc: { createdAt: -1 },
+      created_at_asc: { createdAt: 1 },
+      filename_asc: { filename: 1 },
+      filename_desc: { filename: -1 },
+      size_asc: { bytes: 1 },
+      size_desc: { bytes: -1 },
+    };
+
+    const folders = await FileFolder.find({ user: req.user.id }).lean();
+    const scopedFolderIds =
+      folderId && folderId !== 'root' && folderId !== 'unfiled' && includeDescendants
+        ? collectDescendantFolderIds(folders, folderId)
+        : undefined;
+    const filter = getManagedFileFilter(req.user.id, folderId, queryText, scopedFolderIds);
+    const [files, totalCount] = await Promise.all([
+      File.find(filter)
+        .sort(sortMap[sort] || sortMap.created_at_desc)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      File.countDocuments(filter),
+    ]);
+
+    const folderNameMap = new Map(folders.map((folder) => [folder._id.toString(), folder.name]));
+
+    res.status(200).json({
+      files: files.map((file) =>
+        mapManagedFile(file, folderNameMap.get(file?.metadata?.fileManager?.folderId) ?? null),
+      ),
+      total_count: totalCount,
+      next_cursor: page * limit < totalCount ? String(page + 1) : null,
+      prev_cursor: page > 1 ? String(page - 1) : null,
+    });
+  } catch (error) {
+    logger.error('[/files/manager] Error listing managed files:', error);
+    res.status(error.statusCode || 500).json({ message: error.message || 'Failed to load files' });
+  }
+});
+
+router.post('/manager/upload', async (req, res) => {
+  try {
+    const file = await uploadManagedFile(req);
+    res.status(201).json(mapManagedFile(file));
+  } catch (error) {
+    logger.error('[/files/manager/upload] Error uploading managed file:', error);
+    res.status(error.statusCode || 500).json({ message: error.message || 'Upload failed' });
+  }
+});
+
+router.patch('/manager/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const folderId = req.body?.folder_id || null;
+
+    if (folderId) {
+      await assertFolderOwnership(req.user.id, folderId);
+    }
+
+    const file = await File.findOneAndUpdate(
+      {
+        file_id: fileId,
+        user: req.user.id,
+        context: FileContext.message_attachment,
+      },
+      {
+        $set: {
+          [FILE_MANAGER_FOLDER_PATH]: folderId,
+        },
+      },
+      { new: true },
+    ).lean();
+
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    const folderName = folderId
+      ? ((await FileFolder.findOne({ _id: folderId, user: req.user.id }).lean())?.name ?? null)
+      : null;
+
+    res.status(200).json(mapManagedFile(file, folderName));
+  } catch (error) {
+    logger.error('[/files/manager/:fileId] Error moving managed file:', error);
+    res.status(error.statusCode || 500).json({ message: error.message || 'Failed to move file' });
+  }
+});
+
+router.delete('/manager/:fileId', async (req, res) => {
+  try {
+    const file = await File.findOne({
+      file_id: req.params.fileId,
+      user: req.user.id,
+      context: FileContext.message_attachment,
+    }).lean();
+
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    await processDeleteRequest({ req, files: [file] });
+    res.status(200).json({ deleted: true });
+  } catch (error) {
+    logger.error('[/files/manager/:fileId] Error deleting managed file:', error);
+    res.status(error.statusCode || 500).json({ message: error.message || 'Failed to delete file' });
+  }
+});
+
+router.post('/manager/bulk-delete', async (req, res) => {
+  try {
+    const fileIds = Array.isArray(req.body?.file_ids) ? req.body.file_ids : [];
+    if (fileIds.length === 0) {
+      return res.status(200).json({ deleted_count: 0, skipped_count: 0 });
+    }
+
+    const files = await File.find({
+      file_id: { $in: fileIds },
+      user: req.user.id,
+      context: FileContext.message_attachment,
+    }).lean();
+
+    await processDeleteRequest({ req, files });
+
+    res.status(200).json({
+      deleted_count: files.length,
+      skipped_count: Math.max(0, fileIds.length - files.length),
+    });
+  } catch (error) {
+    logger.error('[/files/manager/bulk-delete] Error deleting managed files:', error);
+    res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || 'Failed to delete files' });
+  }
+});
+
+router.get('/manager/:fileId/download-url', async (req, res) => {
+  try {
+    const file = await File.findOne({
+      file_id: req.params.fileId,
+      user: req.user.id,
+      context: FileContext.message_attachment,
+    }).lean();
+
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    res.status(200).json({
+      url: `/api/files/download/${req.user.id}/${file.file_id}`,
+      expires_in: 0,
+      filename: file.filename,
+      mime_type: file.type,
+    });
+  } catch (error) {
+    logger.error('[/files/manager/:fileId/download-url] Error generating managed file url:', error);
+    res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || 'Failed to get file url' });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {

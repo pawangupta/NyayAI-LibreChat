@@ -77,6 +77,9 @@ const file: Schema<IMongoFile> = new Schema(
     height: Number,
     metadata: {
       fileIdentifier: String,
+      fileManager: {
+        folderId: String,
+      },
     },
     expiresAt: {
       type: Date,

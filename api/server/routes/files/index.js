@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const {
   createFileLimiters,
   configMiddleware,
@@ -8,7 +9,7 @@ const {
 } = require('~/server/middleware');
 const { avatar: asstAvatarRouter } = require('~/server/routes/assistants/v1');
 const { avatar: agentAvatarRouter } = require('~/server/routes/agents/v1');
-const { createMulterInstance } = require('./multer');
+const { createMulterInstance, storage } = require('./multer');
 
 const files = require('./files');
 const images = require('./images');
@@ -23,6 +24,12 @@ const initialize = async () => {
   router.use(uaParser);
 
   const upload = await createMulterInstance();
+  const managerUpload = multer({
+    storage,
+    limits: {
+      fileSize: 50 * 1024 * 1024,
+    },
+  });
   router.post('/speech/stt', upload.single('audio'));
 
   /* Important: speech route must be added before the upload limiters */
@@ -31,6 +38,7 @@ const initialize = async () => {
   const { fileUploadIpLimiter, fileUploadUserLimiter } = createFileLimiters();
   router.post('*', fileUploadIpLimiter, fileUploadUserLimiter);
   router.post('/', upload.single('file'));
+  router.post('/manager/upload', managerUpload.single('file'));
   router.post('/images', upload.single('file'));
   router.post('/images/avatar', upload.single('file'));
   router.post('/images/agents/:agent_id/avatar', upload.single('file'));

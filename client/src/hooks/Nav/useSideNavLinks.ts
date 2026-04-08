@@ -1,29 +1,13 @@
 import { useMemo } from 'react';
 import { Blocks, MCPIcon, AttachmentIcon } from '@librechat/client';
-import {
-  Database,
-  Bookmark,
-  Settings2,
-  ArrowRightToLine,
-  MessageSquareQuote,
-  FileText,
-} from 'lucide-react';
-import {
-  Permissions,
-  EModelEndpoint,
-  PermissionTypes,
-  isParamEndpoint,
-  isAgentsEndpoint,
-  isAssistantsEndpoint,
-} from 'librechat-data-provider';
+import { Database, Bookmark, ArrowRightToLine, FileText } from 'lucide-react';
+import { Permissions, EModelEndpoint, PermissionTypes, isAssistantsEndpoint } from 'librechat-data-provider';
 import type { TInterfaceConfig, TEndpointsConfig } from 'librechat-data-provider';
 import type { NavLink } from '~/common';
 import AgentPanelSwitch from '~/components/SidePanel/Agents/AgentPanelSwitch';
 import BookmarkPanel from '~/components/SidePanel/Bookmarks/BookmarkPanel';
 import MemoryViewer from '~/components/SidePanel/Memories/MemoryViewer';
 import PanelSwitch from '~/components/SidePanel/Builder/PanelSwitch';
-import PromptsAccordion from '~/components/Prompts/PromptsAccordion';
-import Parameters from '~/components/SidePanel/Parameters/Panel';
 import FilesPanel from '~/components/SidePanel/Files/Panel';
 import MCPPanel from '~/components/SidePanel/MCP/MCPPanel';
 import { useGetStartupConfig } from '~/data-provider';
@@ -34,8 +18,6 @@ export default function useSideNavLinks({
   hidePanel,
   keyProvided,
   endpoint,
-  endpointType,
-  interfaceConfig,
   endpointsConfig,
 }: {
   hidePanel: () => void;
@@ -45,10 +27,6 @@ export default function useSideNavLinks({
   interfaceConfig: Partial<TInterfaceConfig>;
   endpointsConfig: TEndpointsConfig;
 }) {
-  const hasAccessToPrompts = useHasAccess({
-    permissionType: PermissionTypes.PROMPTS,
-    permission: Permissions.USE,
-  });
   const hasAccessToBookmarks = useHasAccess({
     permissionType: PermissionTypes.BOOKMARKS,
     permission: Permissions.USE,
@@ -107,16 +85,6 @@ export default function useSideNavLinks({
       });
     }
 
-    if (hasAccessToPrompts) {
-      links.push({
-        title: 'com_ui_prompts',
-        label: '',
-        icon: MessageSquareQuote,
-        id: 'prompts',
-        Component: PromptsAccordion,
-      });
-    }
-
     if (hasAccessToMemories && hasAccessToReadMemories) {
       links.push({
         title: 'com_ui_memories',
@@ -124,21 +92,6 @@ export default function useSideNavLinks({
         icon: Database,
         id: 'memories',
         Component: MemoryViewer,
-      });
-    }
-
-    if (
-      interfaceConfig.parameters === true &&
-      isParamEndpoint(endpoint ?? '', endpointType ?? '') === true &&
-      !isAgentsEndpoint(endpoint) &&
-      keyProvided
-    ) {
-      links.push({
-        title: 'com_sidepanel_parameters',
-        label: '',
-        icon: Settings2,
-        id: 'parameters',
-        Component: Parameters,
       });
     }
 
@@ -153,7 +106,7 @@ export default function useSideNavLinks({
     }
 
     links.push({
-      title: 'com_sidepanel_attach_files',
+      title: 'File Manager',
       label: '',
       icon: AttachmentIcon,
       id: 'files',
@@ -199,12 +152,9 @@ export default function useSideNavLinks({
     return links;
   }, [
     endpointsConfig,
-    interfaceConfig.parameters,
     keyProvided,
-    endpointType,
     endpoint,
     hasAccessToAgents,
-    hasAccessToPrompts,
     hasAccessToMemories,
     hasAccessToReadMemories,
     hasAccessToBookmarks,
