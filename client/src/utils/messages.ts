@@ -117,7 +117,9 @@ const getLatestContentForKey = (message: TMessage): string => {
     // Handle AGENT_UPDATE - use simple marker with agentId suffix
     else if (type === ContentTypes.AGENT_UPDATE && 'agent_update' in part) {
       const agentId = String(part.agent_update?.agentId || 'x').slice(0, 30);
-      text = `au_${agentId}`;
+      const stage = String(part.agent_update?.stage || 'stage').slice(0, 20);
+      const status = String(part.agent_update?.status || 'status').slice(0, 12);
+      text = `au_${agentId}_${stage}_${status}`;
     } else {
       text = type;
     }

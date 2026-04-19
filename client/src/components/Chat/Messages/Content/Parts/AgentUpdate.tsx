@@ -1,21 +1,30 @@
 import React, { useMemo } from 'react';
 import { EModelEndpoint } from 'librechat-data-provider';
-import type { TMessage } from 'librechat-data-provider';
+import type { Agents, TMessage } from 'librechat-data-provider';
 import MessageIcon from '~/components/Share/MessageIcon';
 import { useAgentsMapContext } from '~/Providers';
 import { useLocalize } from '~/hooks';
+import LegalResearchProgress, {
+  isLegalResearchAgentUpdate,
+} from '~/features/agents/legal-research/components/LegalResearchProgress';
 
 interface AgentUpdateProps {
-  currentAgentId: string;
+  update?: Partial<Agents.AgentUpdate['agent_update']> | null;
 }
 
-const AgentUpdate: React.FC<AgentUpdateProps> = ({ currentAgentId }) => {
+const AgentUpdate: React.FC<AgentUpdateProps> = ({ update }) => {
   const localize = useLocalize();
   const agentsMap = useAgentsMapContext();
+  const currentAgentId = update?.agentId ?? '';
   const currentAgent = useMemo(() => agentsMap?.[currentAgentId], [agentsMap, currentAgentId]);
-  if (!currentAgentId) {
+  if (!currentAgentId && !update?.label && !update?.stage) {
     return null;
   }
+
+  if (isLegalResearchAgentUpdate(update)) {
+    return <LegalResearchProgress update={update} />;
+  }
+
   return (
     <div className="relative">
       <div className="absolute -left-6 flex h-full w-4 items-center justify-center">

@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as mammoth from 'mammoth';
-import { AlertTriangle, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
+import { AlertTriangle, Download, ExternalLink, FileText, Loader2, X } from 'lucide-react';
 import { resolveDocDraftingUrl } from '../config';
 
 interface DraftingPreviewPanelProps {
   downloadUrl: string;
+  onClose?: () => void;
 }
 
-export default function DraftingPreviewPanel({ downloadUrl }: DraftingPreviewPanelProps) {
+export default function DraftingPreviewPanel({
+  downloadUrl,
+  onClose,
+}: DraftingPreviewPanelProps) {
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -88,11 +92,22 @@ export default function DraftingPreviewPanel({ downloadUrl }: DraftingPreviewPan
             href={resolvedDownloadUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90 dark:bg-[#c9a85c] dark:text-[#1b1814] dark:hover:bg-[#d7b876]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-indigo-700 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 dark:border-[#d2b36c] dark:bg-[#d2b36c] dark:text-[#1b1814] dark:hover:bg-[#e0c27c]"
           >
             <Download className="h-3.5 w-3.5" />
             Download
           </a>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="Close preview"
+              className="rounded p-1 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary dark:text-[#a39a8d] dark:hover:bg-white/10 dark:hover:text-[#f3efe5]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 

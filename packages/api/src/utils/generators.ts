@@ -63,6 +63,11 @@ export function createStreamEventHandlers(res: ServerResponse) {
         sendEvent(res, event);
       }
     },
+    [GraphEvents.ON_AGENT_UPDATE]: function (event: ServerSentEvent) {
+      if (res) {
+        sendEvent(res, event);
+      }
+    },
   };
 }
 

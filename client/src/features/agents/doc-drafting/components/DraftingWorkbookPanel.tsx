@@ -127,6 +127,53 @@ function formatSampleDownloadLabel(fileName: string) {
     .trim();
 }
 
+function resolveDownloadFileName(contentDisposition: string | null, fallbackFileName: string) {
+  if (!contentDisposition) {
+    return fallbackFileName;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+  return asciiMatch?.[1] ?? fallbackFileName;
+}
+
+async function downloadFilePreservingPage(url: string, fallbackFileName: string) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Download failed with status ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const downloadFileName = resolveDownloadFileName(
+    response.headers.get('content-disposition'),
+    fallbackFileName,
+  );
+  const anchor = document.createElement('a');
+
+  anchor.href = objectUrl;
+  anchor.download = downloadFileName;
+  anchor.rel = 'noopener noreferrer';
+  anchor.style.display = 'none';
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+
+  window.setTimeout(() => {
+    window.URL.revokeObjectURL(objectUrl);
+  }, 1000);
+}
+
 function formatParsedWorkbookTypeLabel(
   normalizedPayload: Record<string, unknown> | undefined,
   fallbackLabel: string | undefined,
@@ -191,6 +238,7 @@ export default function DraftingWorkbookPanel() {
   const parseRequestIdRef = useRef(0);
   const validateRequestIdRef = useRef(0);
   const generateRequestIdRef = useRef(0);
+  const lastAutoDownloadKeyRef = useRef<string | null>(null);
 
   const parsedWorkbook = session.parsedWorkbook;
   const selectedTemplate = useMemo(
@@ -579,13 +627,15 @@ export default function DraftingWorkbookPanel() {
           supportingFiles: requestFiles,
         });
 
+        const preparedDownloadUrl = resolveDocDraftingUrl(prepared.downloadUrl) ?? prepared.downloadUrl;
+
+        await downloadFilePreservingPage(preparedDownloadUrl, prepared.fileName);
+
         markTemplateDownloaded(prepared.fileName, {
           supportingUploadNames: requestFiles.map((file) => file.name),
           preparedTemplateUrl: prepared.downloadUrl,
           preparedTemplateMessage: prepared.message,
         });
-
-        window.open(resolveDocDraftingUrl(prepared.downloadUrl) ?? prepared.downloadUrl, '_blank', 'noopener,noreferrer');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Template download failed');
       } finally {
@@ -594,11 +644,53 @@ export default function DraftingWorkbookPanel() {
       return;
     }
 
-    markTemplateDownloaded(fileName, {
-      supportingUploadNames: supportingFiles.map((file) => file.name),
-    });
-    window.open(`${DOC_DRAFTING_API_BASE_URL}/templates/${encodeURIComponent(fileName)}`, '_blank', 'noopener,noreferrer');
+    try {
+      await downloadFilePreservingPage(
+        `${DOC_DRAFTING_API_BASE_URL}/templates/${encodeURIComponent(fileName)}`,
+        fileName,
+      );
+
+      markTemplateDownloaded(fileName, {
+        supportingUploadNames: supportingFiles.map((file) => file.name),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Template download failed');
+    }
   };
+
+  useEffect(() => {
+    if (!effectiveSubtype?.templateFileName || !stepTwoReady) {
+      return;
+    }
+
+    const autoDownloadKey = [
+      session.selectedDocumentType,
+      effectiveSubtype.id,
+      effectiveSubtype.templateFileName,
+    ].join(':');
+
+    if (lastAutoDownloadKeyRef.current === autoDownloadKey) {
+      return;
+    }
+
+    if (
+      session.templateDownloaded &&
+      session.templateDownloadFileName === effectiveSubtype.templateFileName
+    ) {
+      lastAutoDownloadKeyRef.current = autoDownloadKey;
+      return;
+    }
+
+    lastAutoDownloadKeyRef.current = autoDownloadKey;
+    void handleTemplateDownload(effectiveSubtype.templateFileName);
+  }, [
+    effectiveSubtype?.id,
+    effectiveSubtype?.templateFileName,
+    session.selectedDocumentType,
+    session.templateDownloaded,
+    session.templateDownloadFileName,
+    stepTwoReady,
+  ]);
 
   return (
     <div id="doc-drafting-workflow-panels" className="space-y-4">

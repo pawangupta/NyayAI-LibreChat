@@ -1,5 +1,5 @@
 import { useRecoilValue } from 'recoil';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FileSources, LocalStorageKeys } from 'librechat-data-provider';
 import type { ExtendedFile } from '~/common';
 import { useDeleteFilesMutation } from '~/data-provider';
@@ -36,6 +36,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
   const willDownloadUrl = useWillDownloadUrl(convId);
   const isDocDraftingConvo = isDocDraftingConversation(conversation, conversation?.model);
   const docDraftingDownloadUrl = isDocDraftingConvo ? draftingSession.lastDraft?.downloadUrl ?? '' : '';
+  const [isDraftingPreviewDismissed, setIsDraftingPreviewDismissed] = useState(false);
 
   // Detect PageIndex Contract Analysis conversation
   const isPageIndexConvo = isPageIndexContractConversation(conversation, conversation?.model);
@@ -74,6 +75,10 @@ export default function Presentation({ children }: { children: React.ReactNode }
     mutateAsync({ files });
   }, [mutateAsync]);
 
+  useEffect(() => {
+    setIsDraftingPreviewDismissed(false);
+  }, [docDraftingDownloadUrl]);
+
   const defaultLayout = useMemo(() => {
     const resizableLayout = localStorage.getItem('react-resizable-panels:layout');
     return typeof resizableLayout === 'string' ? JSON.parse(resizableLayout) : undefined;
@@ -110,11 +115,16 @@ export default function Presentation({ children }: { children: React.ReactNode }
   }, [willDownloadUrl]);
 
   const docDraftingPreviewElement = useMemo(() => {
-    if (docDraftingDownloadUrl) {
-      return <DraftingPreviewPanel downloadUrl={docDraftingDownloadUrl} />;
+    if (docDraftingDownloadUrl && !isDraftingPreviewDismissed) {
+      return (
+        <DraftingPreviewPanel
+          downloadUrl={docDraftingDownloadUrl}
+          onClose={() => setIsDraftingPreviewDismissed(true)}
+        />
+      );
     }
     return null;
-  }, [docDraftingDownloadUrl]);
+  }, [docDraftingDownloadUrl, isDraftingPreviewDismissed]);
 
   /** Show the Contract Preview panel when a PageIndex analysis result has a PDF */
   const pageIndexPreviewElement = useMemo(() => {

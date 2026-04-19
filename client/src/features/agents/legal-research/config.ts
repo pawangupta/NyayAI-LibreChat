@@ -3,9 +3,20 @@ type EndpointLike = { name: string };
 const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? '';
 
 export const LEGAL_RESEARCH_PRIMARY_ENDPOINT = 'Legal Research';
-export const LEGAL_RESEARCH_ENDPOINT_ALIASES = ['Legal Research'] as const;
+export const LEGAL_RESEARCH_V3_ENDPOINT = 'Legal Research v3';
+export const LEGAL_RESEARCH_ENDPOINT_ALIASES = [
+  LEGAL_RESEARCH_PRIMARY_ENDPOINT,
+  LEGAL_RESEARCH_V3_ENDPOINT,
+] as const;
 export const LEGAL_RESEARCH_PRIMARY_MODEL = 'Legal Research Assistant';
-export const LEGAL_RESEARCH_MODEL_ALIASES = ['Legal Research Assistant'] as const;
+export const LEGAL_RESEARCH_V3_MODEL = 'legal-research-v3';
+export const LEGAL_RESEARCH_MODEL_ALIASES = [
+  LEGAL_RESEARCH_PRIMARY_MODEL,
+  'legal-research',
+  'Legal Research',
+  LEGAL_RESEARCH_V3_MODEL,
+  LEGAL_RESEARCH_V3_ENDPOINT,
+] as const;
 export const LEGAL_RESEARCH_LABEL = 'Legal Research';
 export const LEGAL_RESEARCH_NAV_SECTION = 'Legal Research';
 

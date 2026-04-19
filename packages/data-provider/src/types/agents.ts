@@ -25,6 +25,12 @@ export namespace Agents {
       index: number;
       runId: string;
       agentId: string;
+      stage?: string;
+      label?: string;
+      detail?: string;
+      status?: 'active' | 'completed' | 'warning';
+      replacePrevious?: boolean;
+      timestamp?: number;
     };
   };
 

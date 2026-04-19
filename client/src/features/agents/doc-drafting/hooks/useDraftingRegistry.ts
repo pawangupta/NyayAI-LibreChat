@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DOC_DRAFTING_API_BASE_URL } from '../config';
-import type { DraftingTemplate } from '../types';
+import type { DraftingTemplate, DraftingTemplateSubtype } from '../types';
 
 const DEFAULT_TEMPLATES: DraftingTemplate[] = [
   {
@@ -115,6 +115,26 @@ function mergeTemplates(remoteTemplates: DraftingTemplate[]) {
   return Array.from(templateMap.values());
 }
 
+function mapRemoteSubtype(
+  subtype: DraftingTemplateSubtype & {
+    template_file_name?: string;
+    supports_upload_docs?: boolean;
+    upload_docs_optional?: boolean;
+    accepted_upload_types?: string[];
+  },
+): DraftingTemplateSubtype {
+  return {
+    id: subtype.id,
+    label: subtype.label,
+    description: subtype.description,
+    enabled: subtype.enabled,
+    templateFileName: subtype.templateFileName ?? subtype.template_file_name,
+    supportsUploadDocs: subtype.supportsUploadDocs ?? subtype.supports_upload_docs,
+    uploadDocsOptional: subtype.uploadDocsOptional ?? subtype.upload_docs_optional,
+    acceptedUploadTypes: subtype.acceptedUploadTypes ?? subtype.accepted_upload_types,
+  };
+}
+
 export function useDraftingRegistry() {
   const [templates, setTemplates] = useState<DraftingTemplate[]>(DEFAULT_TEMPLATES);
   const [isLoading, setIsLoading] = useState(true);
@@ -161,10 +181,17 @@ export function useDraftingRegistry() {
                 };
 
                 const remoteSubtypes = (template as DraftingTemplate & {
-                  subtypes?: DraftingTemplate['subtypes'];
+                  subtypes?: Array<
+                    DraftingTemplateSubtype & {
+                      template_file_name?: string;
+                      supports_upload_docs?: boolean;
+                      upload_docs_optional?: boolean;
+                      accepted_upload_types?: string[];
+                    }
+                  >;
                 }).subtypes;
                 if (remoteSubtypes) {
-                  mapped.subtypes = remoteSubtypes;
+                  mapped.subtypes = remoteSubtypes.map(mapRemoteSubtype);
                 }
 
                 return mapped;

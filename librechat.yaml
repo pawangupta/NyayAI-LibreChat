@@ -174,15 +174,15 @@ endpoints:
     # ── Legal Research ─────────────────────────────────────────────────────────
     - name: "Legal Research"
       apiKey: "legal-research-dev-key"
-      baseURL: "http://host.docker.internal:8002/v1"
+      baseURL: "http://host.docker.internal:8101/v1"
       models:
-        default: ["Legal Research Assistant"]
+        default: ["legal-research"]
         fetch: false
-      modelDisplayLabel: "Legal Research Assistant"
+      modelDisplayLabel: "Legal Research"
       # ── NyayAI nav: section header label shown in the sidebar ──────────────
       group: "Legal Research"
       titleConvo: true
-      titleModel: "Legal Research Assistant"
+      titleModel: "legal-research"
       summarize: false
       forcePrompt: false
       dropParams:
@@ -192,8 +192,8 @@ endpoints:
         - top_p
         - stop
       addParams:
-        max_tokens: 4096
-        temperature: 0.1
+        max_tokens: 16000
+        temperature: 1.0
       description: "AI-powered legal research assistant for case law, statutes, and regulations"
       greeting: |
         👋 Welcome to the Legal Research Assistant!
@@ -206,6 +206,44 @@ endpoints:
         - Ask: **"Summarize the legal landscape on [topic]"**
         
         📚 Just tell me your research topic or question, and I'll get started!
+
+    - name: "Legal Research v3"
+      apiKey: "legal-research-dev-key"
+      baseURL: "http://host.docker.internal:8103/v1"
+      models:
+        default: ["legal-research-v3"]
+        fetch: false
+      modelDisplayLabel: "Legal Research v3"
+      group: "Legal Research"
+      titleConvo: true
+      titleModel: "legal-research-v3"
+      summarize: false
+      forcePrompt: false
+      dropParams:
+        - user
+        - frequency_penalty
+        - presence_penalty
+        - top_p
+        - stop
+      addParams:
+        max_tokens: 16000
+        temperature: 1.0
+      description: "Agentic legal research workflow with live progress updates and provisional strategy support"
+      greeting: |
+        👋 Welcome to **Legal Research v3**!
+
+        I can help you with an agentic legal research workflow that:
+        - understands the matter facts,
+        - asks targeted clarifications when needed,
+        - retrieves supporting authorities,
+        - and streams progress updates live.
+
+        **Try asking:**
+        - **"Need anticipatory bail strategy for a Delhi FIR under 498A"**
+        - **"Research maintainability of a writ against blacklisting"**
+        - **"Show supporting authorities for arbitration fraud exception"**
+        
+        ⚖️ I'll generate structured strategy cards anchored to retrieved authorities.
 
 
     # ── Naya-AI (Ollama) ───────────────────────────────────────────────────────

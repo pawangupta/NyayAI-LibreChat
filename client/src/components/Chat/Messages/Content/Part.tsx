@@ -50,7 +50,7 @@ const Part = memo(
     } else if (part.type === ContentTypes.AGENT_UPDATE) {
       return (
         <>
-          <AgentUpdate currentAgentId={part[ContentTypes.AGENT_UPDATE]?.agentId} />
+          <AgentUpdate update={part[ContentTypes.AGENT_UPDATE]} />
           {isLast && showCursor && (
             <Container>
               <EmptyText />
