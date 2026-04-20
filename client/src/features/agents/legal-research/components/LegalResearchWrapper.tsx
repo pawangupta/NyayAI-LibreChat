@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { LibraryBig, Scale, Sparkles } from 'lucide-react';
+import { LibraryBig, Scale } from 'lucide-react';
 import { ContentTypes, type SearchResultData, type TMessageContentParts } from 'librechat-data-provider';
 import { useSearchContext } from '~/Providers';
 import { cn } from '~/utils';
@@ -134,9 +134,6 @@ export default function LegalResearchWrapper({
 
   const hasResearchMaterials = stats.sources > 0 || stats.files > 0 || stats.images > 0;
   const showSourcesPanel = hasResearchMaterials && Boolean(sources);
-  const reportId = `LR-${String(stats.sources || stats.turns || 1).padStart(3, '0')}-${String(
-    Math.max(stats.turns, 1),
-  ).padStart(2, '0')}`;
 
   return (
     <div
@@ -146,96 +143,14 @@ export default function LegalResearchWrapper({
         className,
       )}
     >
-      <div className="border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.8),rgba(248,249,251,1))] px-6 py-8 dark:border-white/7 dark:bg-[linear-gradient(180deg,rgba(34,31,27,0.98),rgba(26,25,22,1))] sm:px-8 sm:py-10">
-        <div className="border-l-4 border-slate-900 pl-6 dark:border-[#c9a85c]">
+      <div className="border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.8),rgba(248,249,251,1))] px-6 py-4 dark:border-white/7 dark:bg-[linear-gradient(180deg,rgba(34,31,27,0.98),rgba(26,25,22,1))] sm:px-8 sm:py-5">
+        <div>
           <p
-            className="mb-2 text-[10px] uppercase tracking-[0.24em] text-slate-500 dark:text-[#8f887c]"
+            className="text-[10px] uppercase tracking-[0.24em] text-slate-500 dark:text-[#8f887c]"
             style={labelFont}
           >
             Automated Legal Analysis
           </p>
-          <div className="flex flex-wrap items-center gap-2 text-slate-500 dark:text-[#938a7c]">
-            <span
-              className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em]"
-              style={labelFont}
-            >
-              <Scale className="h-3.5 w-3.5" />
-              Legal Research Brief
-            </span>
-            <span
-              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.22em]"
-              style={labelFont}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              The Digital Jurist style
-            </span>
-          </div>
-
-          <div className="mt-4 space-y-2.5">
-            <h3
-              className="text-[1.9rem] font-extrabold leading-tight tracking-[-0.04em] text-slate-900 dark:text-[#f3efe5] sm:text-[2.35rem]"
-              style={headlineFont}
-            >
-              Research findings and cited authorities
-            </h3>
-            <p
-              className="max-w-3xl text-[14px] leading-6 text-slate-600 dark:text-[#b7aea1]"
-              style={bodyFont}
-            >
-              Structured legal analysis with supporting authorities, extracted findings, and a
-              refined editorial report experience.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 grid grid-cols-2 gap-5 md:grid-cols-4">
-          <div>
-            <p
-              className="mb-1 text-[10px] uppercase tracking-[0.22em] text-slate-400 dark:text-[#7d766c]"
-              style={labelFont}
-            >
-              Report ID
-            </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-[#eee6d6]" style={headlineFont}>
-              {reportId}
-            </p>
-          </div>
-          <div>
-            <p
-              className="mb-1 text-[10px] uppercase tracking-[0.22em] text-slate-400 dark:text-[#7d766c]"
-              style={labelFont}
-            >
-              Status
-            </p>
-            <p
-              className="text-sm font-bold uppercase text-emerald-700 dark:text-[#d4b46b]"
-              style={headlineFont}
-            >
-              Verified law
-            </p>
-          </div>
-          <div>
-            <p
-              className="mb-1 text-[10px] uppercase tracking-[0.22em] text-slate-400 dark:text-[#7d766c]"
-              style={labelFont}
-            >
-              Search turns
-            </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-[#eee6d6]" style={headlineFont}>
-              {stats.turns || 1}
-            </p>
-          </div>
-          <div>
-            <p
-              className="mb-1 text-[10px] uppercase tracking-[0.22em] text-slate-400 dark:text-[#7d766c]"
-              style={labelFont}
-            >
-              Authorities
-            </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-[#eee6d6]" style={headlineFont}>
-              {stats.sources || 0}
-            </p>
-          </div>
         </div>
       </div>
 
